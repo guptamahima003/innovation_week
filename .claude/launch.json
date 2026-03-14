@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/shikharvarshney/innovation_week/backend && /Users/shikharvarshney/innovation_week/backend/.venv/bin/python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000"],
+      "port": 8000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/shikharvarshney/innovation_week/frontend && npm run dev"],
+      "port": 3000
+    }
+  ]
+}
