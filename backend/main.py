@@ -55,7 +55,27 @@ async def lifespan(app: FastAPI):
 
     # Load into profile store
     store.load_profiles(profiles)
+    store.persona_engine = engine  # Make engine available for new user assignment & reassignment
     print(f"Profile store loaded — {store.total_profiles} profiles ready")
+
+    # Run demo simulator to pre-populate dashboard metrics
+    if settings.DEMO_SIMULATOR_ENABLED:
+        products_path = Path(__file__).parent / "data" / "products.json"
+        with open(products_path) as pf:
+            products = json.load(pf)
+
+        from services.demo_simulator import DemoSimulator
+        from services.metrics_tracker import tracker
+
+        simulator = DemoSimulator(store, tracker, products)
+        simulator.run(num_sessions=settings.DEMO_SIMULATOR_SESSIONS)
+        stats = tracker.get_stats()
+        print(
+            f"Demo simulator complete — {stats.total_sessions} sessions, "
+            f"{stats.total_abandons} abandons, "
+            f"${stats.revenue_at_risk:.0f} at risk, "
+            f"${stats.estimated_revenue_recovered:.0f} recovered"
+        )
 
     yield  # App runs
 

@@ -3,8 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { Star, ChevronRight } from "lucide-react";
-import type { Product } from "@/lib/types";
+import type { Product, PersonaType } from "@/lib/types";
 import { CATEGORY_IMAGES } from "@/lib/constants";
+import { getBadge, shouldShowPriceHint, PRICE_PRESENTATIONS } from "@/lib/personalization";
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
   tv_video: "from-blue-50 to-indigo-50",
@@ -40,20 +41,40 @@ function RatingStars({ rating }: { rating: number }) {
 
 interface ProductCardProps {
   product: Product;
+  personaType?: PersonaType | null;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, personaType }: ProductCardProps) {
   const emoji = CATEGORY_IMAGES[product.category] ?? "📦";
   const gradient = CATEGORY_GRADIENTS[product.category] ?? "from-gray-50 to-white";
+
+  // Sparse: only ~30% of cards get a badge, with varied text
+  const badge = personaType ? getBadge(personaType, product.id) : null;
+
+  // Pricing tag always shown, but sub-text only on ~40% of cards
+  const pricing = personaType ? PRICE_PRESENTATIONS[personaType] : null;
+  const showHint = shouldShowPriceHint(product.id);
 
   return (
     <Link href={`/product/${product.id}`} className="group block">
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1">
         {/* Emoji hero area */}
         <div
-          className={`bg-gradient-to-br ${gradient} flex items-center justify-center h-44 text-7xl select-none`}
+          className={`bg-gradient-to-br ${gradient} flex items-center justify-center h-44 text-7xl select-none relative`}
         >
           {emoji}
+
+          {/* ── Social Proof Badge — sparse & varied ── */}
+          {badge && (
+            <div
+              className={`absolute top-2 left-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${badge.gradient} backdrop-blur-sm shadow-sm`}
+            >
+              <span className="text-xs">{badge.icon}</span>
+              <span className={`text-[10px] font-bold ${badge.textColor} truncate`}>
+                {badge.text}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Info */}
@@ -70,12 +91,39 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          {/* Price + Arrow */}
-          <div className="flex items-center justify-between mt-3">
-            <span className="text-lg font-bold text-[#0046BE]">
-              ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </span>
-            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#0046BE] transition-colors" />
+          {/* ── Dynamic Price ── */}
+          <div className="mt-3">
+            {/* Price tag pill — only show on cards with hints */}
+            {pricing && showHint && (
+              <div className="mb-1.5">
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${pricing.tagBg} ${pricing.tagText}`}
+                >
+                  {pricing.tagIcon} {pricing.tag}
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-[#0046BE]">
+                  ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </span>
+                {pricing?.showStrikethrough && showHint && (
+                  <span className="text-xs text-gray-400 line-through">
+                    ${(product.price * pricing.originalPriceMultiplier).toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#0046BE] transition-colors" />
+            </div>
+
+            {/* Sub-text — only on ~40% of cards */}
+            {pricing && showHint && (
+              <p className="text-[10px] text-gray-500 mt-1 leading-tight">
+                {pricing.subText(product.price)}
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -11,7 +11,8 @@
       "name": "frontend",
       "runtimeExecutable": "bash",
       "runtimeArgs": ["-c", "cd /Users/shikharvarshney/innovation_week/frontend && npm run dev"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": false
     }
   ]
 }

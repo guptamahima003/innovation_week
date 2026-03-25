@@ -13,6 +13,10 @@ _REASON_MATRIX: dict[tuple[str, str], AbandonReason] = {
     (AbandonType.CART_ABANDON, PersonaType.LOYALTY_POWER_USER): AbandonReason.DISTRACTION,
     (AbandonType.CART_ABANDON, PersonaType.LAPSING_CUSTOMER): AbandonReason.DISTRACTION,
     (AbandonType.CART_ABANDON, PersonaType.BUSINESS_BUYER): AbandonReason.PRICE_TOO_HIGH,
+    (AbandonType.CART_ABANDON, PersonaType.IMPULSE_BUYER): AbandonReason.DISTRACTION,
+    (AbandonType.CART_ABANDON, PersonaType.HOME_UPGRADER): AbandonReason.PRICE_TOO_HIGH,
+    (AbandonType.CART_ABANDON, PersonaType.GIFT_SHOPPER): AbandonReason.CONFIDENCE_GAP,
+    (AbandonType.CART_ABANDON, PersonaType.STUDENT_BUDGET): AbandonReason.PRICE_TOO_HIGH,
     # Checkout abandon
     (AbandonType.CHECKOUT_ABANDON, PersonaType.VALUE_HUNTER): AbandonReason.PAYMENT_FRICTION,
     (AbandonType.CHECKOUT_ABANDON, PersonaType.TECH_ENTHUSIAST): AbandonReason.PAYMENT_FRICTION,
@@ -20,6 +24,10 @@ _REASON_MATRIX: dict[tuple[str, str], AbandonReason] = {
     (AbandonType.CHECKOUT_ABANDON, PersonaType.LOYALTY_POWER_USER): AbandonReason.PAYMENT_FRICTION,
     (AbandonType.CHECKOUT_ABANDON, PersonaType.LAPSING_CUSTOMER): AbandonReason.PRICE_TOO_HIGH,
     (AbandonType.CHECKOUT_ABANDON, PersonaType.BUSINESS_BUYER): AbandonReason.PAYMENT_FRICTION,
+    (AbandonType.CHECKOUT_ABANDON, PersonaType.IMPULSE_BUYER): AbandonReason.PAYMENT_FRICTION,
+    (AbandonType.CHECKOUT_ABANDON, PersonaType.HOME_UPGRADER): AbandonReason.PAYMENT_FRICTION,
+    (AbandonType.CHECKOUT_ABANDON, PersonaType.GIFT_SHOPPER): AbandonReason.PAYMENT_FRICTION,
+    (AbandonType.CHECKOUT_ABANDON, PersonaType.STUDENT_BUDGET): AbandonReason.PAYMENT_FRICTION,
     # Product page abandon
     (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.VALUE_HUNTER): AbandonReason.PRICE_TOO_HIGH,
     (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.TECH_ENTHUSIAST): AbandonReason.CONFIDENCE_GAP,
@@ -27,6 +35,10 @@ _REASON_MATRIX: dict[tuple[str, str], AbandonReason] = {
     (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.LOYALTY_POWER_USER): AbandonReason.DISTRACTION,
     (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.LAPSING_CUSTOMER): AbandonReason.DISTRACTION,
     (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.BUSINESS_BUYER): AbandonReason.CONFIDENCE_GAP,
+    (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.IMPULSE_BUYER): AbandonReason.DISTRACTION,
+    (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.HOME_UPGRADER): AbandonReason.CONFIDENCE_GAP,
+    (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.GIFT_SHOPPER): AbandonReason.CONFIDENCE_GAP,
+    (AbandonType.PRODUCT_PAGE_ABANDON, PersonaType.STUDENT_BUDGET): AbandonReason.PRICE_TOO_HIGH,
     # Search abandon
     (AbandonType.SEARCH_ABANDON, PersonaType.VALUE_HUNTER): AbandonReason.COULDNT_FIND_IT,
     (AbandonType.SEARCH_ABANDON, PersonaType.TECH_ENTHUSIAST): AbandonReason.COULDNT_FIND_IT,
@@ -34,6 +46,10 @@ _REASON_MATRIX: dict[tuple[str, str], AbandonReason] = {
     (AbandonType.SEARCH_ABANDON, PersonaType.LOYALTY_POWER_USER): AbandonReason.COULDNT_FIND_IT,
     (AbandonType.SEARCH_ABANDON, PersonaType.LAPSING_CUSTOMER): AbandonReason.COULDNT_FIND_IT,
     (AbandonType.SEARCH_ABANDON, PersonaType.BUSINESS_BUYER): AbandonReason.COULDNT_FIND_IT,
+    (AbandonType.SEARCH_ABANDON, PersonaType.IMPULSE_BUYER): AbandonReason.COULDNT_FIND_IT,
+    (AbandonType.SEARCH_ABANDON, PersonaType.HOME_UPGRADER): AbandonReason.COULDNT_FIND_IT,
+    (AbandonType.SEARCH_ABANDON, PersonaType.GIFT_SHOPPER): AbandonReason.COULDNT_FIND_IT,
+    (AbandonType.SEARCH_ABANDON, PersonaType.STUDENT_BUDGET): AbandonReason.COULDNT_FIND_IT,
 }
 
 

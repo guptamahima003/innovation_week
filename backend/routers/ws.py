@@ -67,8 +67,14 @@ async def _process_event(session_id: str, event: dict) -> None:
     event_type = event.get("event_type", "")
     data = event.get("data", {})
 
-    # Record event in session history
-    store.add_event(session_id, event)
+    # Record event in session history (may trigger persona reassignment)
+    reassignment = store.add_event(session_id, event)
+
+    # If persona was reassigned, update tracker distribution
+    if reassignment:
+        old_persona, new_persona = reassignment
+        tracker.persona_distribution[old_persona] = max(0, tracker.persona_distribution.get(old_persona, 0) - 1)
+        tracker.persona_distribution[new_persona] = tracker.persona_distribution.get(new_persona, 0) + 1
 
     # Handle cart updates
     if event_type == "add_to_cart":
@@ -94,16 +100,18 @@ async def _process_event(session_id: str, event: dict) -> None:
     # Run abandon detection
     signal: AbandonSignal | None = detector.detect(event, history, cart)
 
+    # Extract persona type early so it's available for all tracking calls
+    persona_type = profile.get("persona_type", "tech_enthusiast")
+
     if signal:
         # Classify the abandon reason
         reason = classifier.classify(signal, profile)
 
-        # Track metrics
+        # Track metrics (with persona for per-persona stats)
         reason_str = reason.value if hasattr(reason, 'value') else str(reason)
-        tracker.record_abandon(signal, reason_str)
+        tracker.record_abandon(signal, reason_str, persona_type=persona_type)
 
         # Determine intervention
-        persona_type = profile.get("persona_type", "tech_enthusiast")
         intervention = intervention_engine.decide(reason, persona_type, signal)
 
         # Track intervention
@@ -162,7 +170,7 @@ async def storefront_ws(websocket: WebSocket, session_id: str):
     # Ensure session exists
     if not store.get_profile(session_id):
         session_info = store.create_session(session_id=session_id)
-        tracker.record_session(session_info["persona_type"])
+        tracker.record_session(session_info["persona_type"], customer_id=session_info["customer_id"])
 
     try:
         while True:

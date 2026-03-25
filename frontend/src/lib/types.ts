@@ -16,7 +16,11 @@ export type PersonaType =
   | "considered_researcher"
   | "loyalty_power_user"
   | "lapsing_customer"
-  | "business_buyer";
+  | "business_buyer"
+  | "impulse_buyer"
+  | "home_upgrader"
+  | "gift_shopper"
+  | "student_budget";
 
 export interface SessionInfo {
   session_id: string;
@@ -81,6 +85,7 @@ export interface DashboardEvent {
 export interface DashboardStats {
   total_sessions: number;
   active_sessions: number;
+  unique_customers: number;
   total_abandons: number;
   abandons_by_type: Record<string, number>;
   abandons_by_reason: Record<string, number>;
@@ -105,4 +110,24 @@ export interface PersonaSummary {
   count: number;
   percentage: number;
   color: string;
+}
+
+export interface PersonaDetailStats {
+  persona_type: string;
+  label: string;
+  color: string;
+  description: string;
+  sessions: number;
+  abandons: number;
+  abandon_rate: number;
+  abandons_by_type: Record<string, number>;
+  abandons_by_reason: Record<string, number>;
+  interventions: number;
+  interventions_by_type: Record<string, number>;
+  revenue_at_risk: number;
+  revenue_recovered: number;
+  intervention_success_rate: number;
+  avg_cart_value: number;
+  conversion_rate: number;
+  top_abandoned_products: { name: string; count: number }[];
 }

@@ -132,7 +132,7 @@ def _gen_persona_profile(persona: str) -> dict:
         life_stage = random.choice(LIFE_STAGES)
         income = random.choice(INCOME_BANDS)
 
-    else:  # business_buyer
+    elif persona == "business_buyer":
         tech_affinity = _clamp(np.random.normal(0.55, 0.15), 0.25, 0.85)
         price_sensitivity = _clamp(np.random.normal(0.3, 0.12), 0.1, 0.6)
         deal_seeking = _clamp(np.random.normal(0.25, 0.1), 0.05, 0.5)
@@ -149,6 +149,78 @@ def _gen_persona_profile(persona: str) -> dict:
         loyalty_tier = random.choices(["member", "silver", "gold"], weights=[0.3, 0.4, 0.3])[0]
         life_stage = random.choice(["young_professional", "established_family"])
         income = random.choices(["75k-100k", "100k-150k", "150k-200k"], weights=[0.25, 0.4, 0.35])[0]
+
+    elif persona == "impulse_buyer":
+        tech_affinity = _clamp(np.random.normal(0.55, 0.18), 0.2, 0.9)
+        price_sensitivity = _clamp(np.random.normal(0.35, 0.15), 0.1, 0.7)
+        deal_seeking = _clamp(np.random.normal(0.5, 0.15), 0.2, 0.8)
+        research_depth = _clamp(np.random.normal(0.15, 0.08), 0.05, 0.35)
+        brand_loyalty = _clamp(np.random.normal(0.4, 0.15), 0.1, 0.7)
+        avg_order_value = _clamp(np.random.normal(200, 100), 50, 500)
+        lifetime_spend = _clamp(np.random.normal(4000, 2000), 800, 10000)
+        visits_90d = int(_clamp(np.random.normal(45, 15), 15, 80))
+        session_dur = _clamp(np.random.normal(4, 2), 1, 10)
+        cart_abandon_rate = _clamp(np.random.normal(0.3, 0.12), 0.1, 0.6)
+        churn = _clamp(np.random.normal(0.2, 0.1), 0.05, 0.4)
+        top_cats = random.sample(["gaming", "audio", "wearables", "phones", "accessories"], 3)
+        preferred_brands = random.sample(["Apple", "Samsung", "Razer", "JBL", "Sony"], 3)
+        loyalty_tier = random.choices(["none", "member", "silver"], weights=[0.3, 0.4, 0.3])[0]
+        life_stage = random.choice(["young_professional", "student", "young_family"])
+        income = random.choices(["25k-50k", "50k-75k", "75k-100k"], weights=[0.3, 0.4, 0.3])[0]
+
+    elif persona == "home_upgrader":
+        tech_affinity = _clamp(np.random.normal(0.5, 0.15), 0.2, 0.8)
+        price_sensitivity = _clamp(np.random.normal(0.4, 0.15), 0.15, 0.7)
+        deal_seeking = _clamp(np.random.normal(0.3, 0.12), 0.1, 0.6)
+        research_depth = _clamp(np.random.normal(0.6, 0.15), 0.3, 0.85)
+        brand_loyalty = _clamp(np.random.normal(0.55, 0.15), 0.25, 0.85)
+        avg_order_value = _clamp(np.random.normal(500, 200), 200, 1200)
+        lifetime_spend = _clamp(np.random.normal(7000, 3000), 2000, 18000)
+        visits_90d = int(_clamp(np.random.normal(15, 8), 3, 35))
+        session_dur = _clamp(np.random.normal(14, 5), 5, 28)
+        cart_abandon_rate = _clamp(np.random.normal(0.25, 0.1), 0.05, 0.5)
+        churn = _clamp(np.random.normal(0.2, 0.1), 0.05, 0.4)
+        top_cats = random.sample(["appliances", "smart_home", "tv_video", "networking"], 3)
+        preferred_brands = random.sample(["LG", "Samsung", "Dyson", "Google", "Philips"], 3)
+        loyalty_tier = random.choices(["member", "silver", "gold"], weights=[0.3, 0.4, 0.3])[0]
+        life_stage = random.choice(["established_family", "young_family", "empty_nester"])
+        income = random.choices(["75k-100k", "100k-150k", "150k-200k"], weights=[0.3, 0.45, 0.25])[0]
+
+    elif persona == "gift_shopper":
+        tech_affinity = _clamp(np.random.normal(0.4, 0.18), 0.1, 0.8)
+        price_sensitivity = _clamp(np.random.normal(0.5, 0.15), 0.2, 0.8)
+        deal_seeking = _clamp(np.random.normal(0.45, 0.15), 0.15, 0.75)
+        research_depth = _clamp(np.random.normal(0.55, 0.15), 0.25, 0.85)
+        brand_loyalty = _clamp(np.random.normal(0.4, 0.15), 0.1, 0.7)
+        avg_order_value = _clamp(np.random.normal(250, 120), 60, 600)
+        lifetime_spend = _clamp(np.random.normal(3000, 1500), 500, 8000)
+        visits_90d = int(_clamp(np.random.normal(18, 10), 3, 40))
+        session_dur = _clamp(np.random.normal(10, 4), 3, 22)
+        cart_abandon_rate = _clamp(np.random.normal(0.35, 0.12), 0.1, 0.65)
+        churn = _clamp(np.random.normal(0.3, 0.12), 0.1, 0.55)
+        top_cats = random.sample(["audio", "wearables", "smart_home", "gaming", "wellness"], 3)
+        preferred_brands = random.sample(["Apple", "Bose", "JBL", "Dyson", "Canon", "Sony"], 3)
+        loyalty_tier = random.choices(["none", "member", "silver"], weights=[0.35, 0.4, 0.25])[0]
+        life_stage = random.choice(["established_family", "young_professional", "empty_nester"])
+        income = random.choices(["50k-75k", "75k-100k", "100k-150k"], weights=[0.3, 0.4, 0.3])[0]
+
+    else:  # student_budget
+        tech_affinity = _clamp(np.random.normal(0.6, 0.15), 0.3, 0.85)
+        price_sensitivity = _clamp(np.random.normal(0.8, 0.1), 0.55, 1.0)
+        deal_seeking = _clamp(np.random.normal(0.7, 0.12), 0.4, 0.95)
+        research_depth = _clamp(np.random.normal(0.45, 0.15), 0.15, 0.75)
+        brand_loyalty = _clamp(np.random.normal(0.3, 0.12), 0.1, 0.55)
+        avg_order_value = _clamp(np.random.normal(120, 60), 30, 300)
+        lifetime_spend = _clamp(np.random.normal(1500, 800), 200, 4000)
+        visits_90d = int(_clamp(np.random.normal(30, 12), 8, 55))
+        session_dur = _clamp(np.random.normal(7, 3), 2, 15)
+        cart_abandon_rate = _clamp(np.random.normal(0.5, 0.15), 0.2, 0.8)
+        churn = _clamp(np.random.normal(0.25, 0.1), 0.05, 0.5)
+        top_cats = random.sample(["computing", "audio", "gaming", "phones", "accessories"], 3)
+        preferred_brands = random.sample(["Apple", "Samsung", "Lenovo", "JBL", "Razer"], 3)
+        loyalty_tier = random.choices(["none", "member"], weights=[0.5, 0.5])[0]
+        life_stage = "student"
+        income = random.choices(["under_25k", "25k-50k"], weights=[0.6, 0.4])[0]
 
     age = int(_clamp(np.random.normal(38, 12), 18, 72))
     orders = int(lifetime_spend / avg_order_value)
@@ -235,12 +307,16 @@ def generate_customers(n: int = NUM_CUSTOMERS) -> list[dict]:
     """Generate n customer profiles with pre-biased persona distributions."""
     # Target distribution
     persona_weights = {
-        "tech_enthusiast": 0.18,
-        "value_hunter": 0.22,
-        "considered_researcher": 0.15,
-        "loyalty_power_user": 0.20,
-        "lapsing_customer": 0.15,
-        "business_buyer": 0.10,
+        "tech_enthusiast": 0.13,
+        "value_hunter": 0.15,
+        "considered_researcher": 0.10,
+        "loyalty_power_user": 0.14,
+        "lapsing_customer": 0.10,
+        "business_buyer": 0.08,
+        "impulse_buyer": 0.10,
+        "home_upgrader": 0.08,
+        "gift_shopper": 0.06,
+        "student_budget": 0.06,
     }
 
     customers = []

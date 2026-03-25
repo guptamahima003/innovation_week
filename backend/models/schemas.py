@@ -15,6 +15,10 @@ class PersonaType(str, Enum):
     LOYALTY_POWER_USER = "loyalty_power_user"
     LAPSING_CUSTOMER = "lapsing_customer"
     BUSINESS_BUYER = "business_buyer"
+    IMPULSE_BUYER = "impulse_buyer"
+    HOME_UPGRADER = "home_upgrader"
+    GIFT_SHOPPER = "gift_shopper"
+    STUDENT_BUDGET = "student_budget"
 
 
 class AbandonType(str, Enum):
@@ -195,6 +199,7 @@ class DashboardStats(BaseModel):
     interventions_triggered: int = 0
     interventions_by_type: dict[str, int] = {}
     persona_distribution: dict[str, int] = {}
+    unique_customers: int = 0
     revenue_at_risk: float = 0.0
     estimated_revenue_recovered: float = 0.0
 
@@ -223,6 +228,26 @@ class PersonaSummary(BaseModel):
     count: int
     percentage: float
     color: str
+
+
+class PersonaDetailStats(BaseModel):
+    persona_type: str
+    label: str = ""
+    color: str = ""
+    description: str = ""
+    sessions: int = 0
+    abandons: int = 0
+    abandon_rate: float = 0.0
+    abandons_by_type: dict[str, int] = {}
+    abandons_by_reason: dict[str, int] = {}
+    interventions: int = 0
+    interventions_by_type: dict[str, int] = {}
+    revenue_at_risk: float = 0.0
+    revenue_recovered: float = 0.0
+    intervention_success_rate: float = 0.0
+    avg_cart_value: float = 0.0
+    conversion_rate: float = 0.0
+    top_abandoned_products: list[dict[str, Any]] = []
 
 
 # ── Persona metadata ──────────────────────────────────────────────────────────
@@ -257,5 +282,25 @@ PERSONA_META = {
         "label": "Business Buyer",
         "description": "B2B purchaser buying in bulk with high AOV. Values service SLAs and managed solutions over consumer deals.",
         "color": "#8b5cf6",
+    },
+    PersonaType.IMPULSE_BUYER: {
+        "label": "Impulse Buyer",
+        "description": "Fast decision-maker with low research depth and high purchase rate. Responds strongly to urgency and scarcity cues.",
+        "color": "#ec4899",
+    },
+    PersonaType.HOME_UPGRADER: {
+        "label": "Home Upgrader",
+        "description": "Focused on appliances and smart home products. Mid-to-high AOV, family-oriented, seasonal buyer.",
+        "color": "#14b8a6",
+    },
+    PersonaType.GIFT_SHOPPER: {
+        "label": "Gift Shopper",
+        "description": "Seasonal buyer who browses outside usual categories. Checks reviews for unfamiliar products and values gift-ready options.",
+        "color": "#f97316",
+    },
+    PersonaType.STUDENT_BUDGET: {
+        "label": "Student Budget",
+        "description": "Price-sensitive younger demographic focused on education and entertainment categories. Financing-inclined with limited spend.",
+        "color": "#06b6d4",
     },
 }

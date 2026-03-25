@@ -35,6 +35,10 @@ PERSONA_LABELS = [
     "loyalty_power_user",
     "lapsing_customer",
     "business_buyer",
+    "impulse_buyer",
+    "home_upgrader",
+    "gift_shopper",
+    "student_budget",
 ]
 
 
@@ -83,6 +87,10 @@ class PersonaEngine:
             ("loyalty_power_user", lambda c: c[feature_idx["brand_loyalty_score"]] + c[feature_idx["lifetime_spend"]] / 20000.0 - c[feature_idx["propensity_to_churn"]]),
             ("lapsing_customer", lambda c: c[feature_idx["propensity_to_churn"]] + c[feature_idx["days_since_last_visit"]] / 100.0 - c[feature_idx["total_site_visits_90d"]] / 50.0),
             ("business_buyer", lambda c: c[feature_idx["avg_order_value"]] / 1000.0 + c[feature_idx["lifetime_spend"]] / 20000.0 - c[feature_idx["deal_seeking_score"]]),
+            ("impulse_buyer", lambda c: -c[feature_idx["research_depth"]] - c[feature_idx["avg_session_duration_min"]] / 30.0 + c[feature_idx["cart_abandonment_rate"]]),
+            ("home_upgrader", lambda c: c[feature_idx["avg_order_value"]] / 1000.0 + 0.5 * c[feature_idx["tech_affinity"]] - c[feature_idx["deal_seeking_score"]]),
+            ("gift_shopper", lambda c: c[feature_idx["research_depth"]] * 0.5 + c[feature_idx["price_sensitivity"]] * 0.3 + c[feature_idx["brand_loyalty_score"]] * 0.2),
+            ("student_budget", lambda c: c[feature_idx["price_sensitivity"]] - c[feature_idx["lifetime_spend"]] / 20000.0 - c[feature_idx["avg_order_value"]] / 1000.0),
         ]
 
         for persona_name, score_fn in rules:

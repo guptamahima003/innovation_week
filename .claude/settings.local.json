@@ -43,7 +43,22 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(python3 -c \"import json,sys; prods=json.load\\(sys.stdin\\); cats=set\\(p[''category''] for p in prods\\); print\\(''Categories found:'', sorted\\(cats\\)\\)\")",
       "Bash(source /Users/shikharvarshney/innovation_week/backend/.venv/bin/activate)",
-      "Bash(pip install aiohttp -q)"
+      "Bash(pip install aiohttp -q)",
+      "Bash(bash /Users/shikharvarshney/innovation_week/scripts/setup.sh)",
+      "Bash(bash /Users/shikharvarshney/innovation_week/scripts/dev.sh)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/docs)",
+      "Bash(pkill -f \"uvicorn main:app\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(python data/generate_synthetic.py)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(f''''  {p[\"\"persona_type\"\"]}: {p[\"\"label\"\"]} \\({p[\"\"color\"\"]}\\)''''\\) for p in d[''''personas'''']]\")",
+      "Bash(curl -s -X POST http://localhost:8000/api/customer -H 'Content-Type: application/json' -d '{\"\"\"\"first_name\"\"\"\":\"\"\"\"Alice\"\"\"\",\"\"\"\"last_name\"\"\"\":\"\"\"\"Test\"\"\"\",\"\"\"\"tech_affinity\"\"\"\":0.9,\"\"\"\"price_sensitivity\"\"\"\":0.1,\"\"\"\"research_depth\"\"\"\":0.2}')",
+      "Bash(curl -s -X POST http://localhost:8000/api/customer/predict-persona -H 'Content-Type: application/json' -d '{\"\"\"\"price_sensitivity\"\"\"\":0.9,\"\"\"\"deal_seeking_score\"\"\"\":0.85,\"\"\"\"cart_abandonment_rate\"\"\"\":0.7,\"\"\"\"lifetime_spend\"\"\"\":1500,\"\"\"\"avg_order_value\"\"\"\":100}')",
+      "Bash(curl -s -X POST http://localhost:8000/api/session)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/api/health)",
+      "Bash(find /Users/shikharvarshney/innovation_week/frontend/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name package.json \\\\\\))",
+      "Bash(curl -s http://localhost:8000/api/personas/all/stats)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

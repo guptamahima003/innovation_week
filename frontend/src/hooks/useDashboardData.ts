@@ -6,6 +6,7 @@ import type { DashboardEvent, DashboardStats, DashboardUpdate } from "@/lib/type
 const DEFAULT_STATS: DashboardStats = {
   total_sessions: 0,
   active_sessions: 0,
+  unique_customers: 0,
   total_abandons: 0,
   abandons_by_type: {},
   abandons_by_reason: {},

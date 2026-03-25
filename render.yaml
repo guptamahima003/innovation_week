@@ -1,4 +1,5 @@
 services:
+  # ── Backend (FastAPI) ──────────────────────────────────────────────────────
   - type: web
     name: persona-engine-api
     runtime: python
@@ -8,7 +9,34 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: NUM_CUSTOMERS
-        value: "2000"
       - key: PYTHON_VERSION
         value: "3.11.0"
+      - key: NUM_CUSTOMERS
+        value: "2000"
+      - key: DEMO_SIMULATOR_ENABLED
+        value: "true"
+      - key: DEMO_SIMULATOR_SESSIONS
+        value: "200"
+      - key: CORS_ORIGINS
+        value: '["https://persona-engine-frontend.onrender.com"]'
+
+  # ── Frontend (Next.js) ─────────────────────────────────────────────────────
+  - type: web
+    name: persona-engine-frontend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: persona-engine-api
+          type: web
+          property: host
+          # Will resolve to https://persona-engine-api.onrender.com
+      - key: NEXT_PUBLIC_WS_URL
+        value: "wss://persona-engine-api.onrender.com"

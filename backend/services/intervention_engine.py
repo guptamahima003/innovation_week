@@ -79,6 +79,34 @@ _INTERVENTION_MATRIX: dict[tuple[str, str], dict] = {
         "Get Business Quote",
         urgency="medium", display_duration_seconds=15,
     ),
+    (AbandonReason.PRICE_TOO_HIGH, PersonaType.IMPULSE_BUYER): _template(
+        InterventionActionType.OVERLAY, "flash_sale",
+        "⚡ Flash Sale — 2 Hours Left!",
+        "{product_name} is on flash sale right now! Grab it before the deal disappears.",
+        "Grab the Deal",
+        discount_pct=12, urgency="high", display_duration_seconds=12,
+    ),
+    (AbandonReason.PRICE_TOO_HIGH, PersonaType.HOME_UPGRADER): _template(
+        InterventionActionType.OVERLAY, "bundle_savings",
+        "🏠 Home Bundle Savings",
+        "Bundle {product_name} with other home essentials and save up to 15%. Upgrade smarter, not harder.",
+        "See Bundle Deals",
+        discount_pct=15, urgency="medium", display_duration_seconds=18,
+    ),
+    (AbandonReason.PRICE_TOO_HIGH, PersonaType.GIFT_SHOPPER): _template(
+        InterventionActionType.OVERLAY, "gift_value_pick",
+        "🎁 Top-Rated Gift Pick",
+        "Looking for the perfect gift? {product_name} is a top-rated choice — and it's on sale this week!",
+        "See Gift Price",
+        discount_pct=10, urgency="medium", display_duration_seconds=15,
+    ),
+    (AbandonReason.PRICE_TOO_HIGH, PersonaType.STUDENT_BUDGET): _template(
+        InterventionActionType.OVERLAY, "student_discount",
+        "🎓 Student Discount Available!",
+        "Verify your student status and get an exclusive 15% off {product_name}. Education pricing just for you.",
+        "Unlock Student Price",
+        discount_pct=15, urgency="high", display_duration_seconds=20,
+    ),
 
     # Payment friction
     (AbandonReason.PAYMENT_FRICTION, PersonaType.VALUE_HUNTER): _template(
@@ -122,6 +150,34 @@ _INTERVENTION_MATRIX: dict[tuple[str, str], dict] = {
         "Set up Net 30 terms for your business. Purchase {product_name} now, pay on invoice.",
         "Apply for Net Terms",
         urgency="medium", display_duration_seconds=15,
+    ),
+    (AbandonReason.PAYMENT_FRICTION, PersonaType.IMPULSE_BUYER): _template(
+        InterventionActionType.OVERLAY, "one_tap_pay",
+        "⚡ One-Tap Checkout",
+        "Don't lose your spot! Complete your {product_name} purchase in one tap with Apple Pay or Google Pay.",
+        "Pay Instantly",
+        urgency="high", display_duration_seconds=10,
+    ),
+    (AbandonReason.PAYMENT_FRICTION, PersonaType.HOME_UPGRADER): _template(
+        InterventionActionType.OVERLAY, "home_financing",
+        "🏠 0% Home Upgrade Financing",
+        "Finance {product_name} with 0% APR for 24 months. Make your home upgrade affordable.",
+        "See Monthly Payments",
+        urgency="medium", display_duration_seconds=18,
+    ),
+    (AbandonReason.PAYMENT_FRICTION, PersonaType.GIFT_SHOPPER): _template(
+        InterventionActionType.OVERLAY, "gift_card_payment",
+        "🎁 Pay with Gift Cards",
+        "Have gift cards? Use them towards {product_name}. Combine multiple gift cards for easy checkout.",
+        "Use Gift Card",
+        urgency="medium", display_duration_seconds=15,
+    ),
+    (AbandonReason.PAYMENT_FRICTION, PersonaType.STUDENT_BUDGET): _template(
+        InterventionActionType.OVERLAY, "student_bnpl",
+        "🎓 Student-Friendly Payments",
+        "Split {product_name} into 4 easy payments — no interest, no credit check required. Built for students.",
+        "Pay in 4 Installments",
+        urgency="high", display_duration_seconds=18,
     ),
 
     # Confidence gap
@@ -167,6 +223,34 @@ _INTERVENTION_MATRIX: dict[tuple[str, str], dict] = {
         "Book Consultation",
         urgency="medium", display_duration_seconds=15,
     ),
+    (AbandonReason.CONFIDENCE_GAP, PersonaType.IMPULSE_BUYER): _template(
+        InterventionActionType.OVERLAY, "trending_now",
+        "🔥 Trending Right Now",
+        "{product_name} is selling fast — 47 people bought it in the last hour. Don't miss out!",
+        "Buy Now",
+        urgency="high", display_duration_seconds=10,
+    ),
+    (AbandonReason.CONFIDENCE_GAP, PersonaType.HOME_UPGRADER): _template(
+        InterventionActionType.OVERLAY, "home_expert_review",
+        "🏠 Home Expert Approved",
+        "Our smart home experts rated {product_name} as a top pick for home upgrades. See why families love it.",
+        "Read Expert Review",
+        urgency="medium", display_duration_seconds=18,
+    ),
+    (AbandonReason.CONFIDENCE_GAP, PersonaType.GIFT_SHOPPER): _template(
+        InterventionActionType.OVERLAY, "top_gift_rated",
+        "🎁 #1 Gift in This Category",
+        "Not sure if it's the right gift? {product_name} has a 4.8-star rating and is our most-gifted item!",
+        "See Gift Reviews",
+        urgency="medium", display_duration_seconds=15,
+    ),
+    (AbandonReason.CONFIDENCE_GAP, PersonaType.STUDENT_BUDGET): _template(
+        InterventionActionType.OVERLAY, "student_reviews",
+        "🎓 Top Pick Among Students",
+        "92% of student buyers recommend {product_name}. See what fellow students are saying.",
+        "Read Student Reviews",
+        urgency="medium", display_duration_seconds=18,
+    ),
 
     # Couldn't find it
     (AbandonReason.COULDNT_FIND_IT, PersonaType.VALUE_HUNTER): _template(
@@ -211,6 +295,34 @@ _INTERVENTION_MATRIX: dict[tuple[str, str], dict] = {
         "Request Callback",
         urgency="medium", display_duration_seconds=15,
     ),
+    (AbandonReason.COULDNT_FIND_IT, PersonaType.IMPULSE_BUYER): _template(
+        InterventionActionType.OVERLAY, "trending_alternatives",
+        "🔥 Trending Alternatives",
+        "Can't find what you want? Check out what's trending right now — these are flying off the shelves!",
+        "See What's Hot",
+        urgency="high", display_duration_seconds=12,
+    ),
+    (AbandonReason.COULDNT_FIND_IT, PersonaType.HOME_UPGRADER): _template(
+        InterventionActionType.OVERLAY, "home_solutions",
+        "🏠 Home Solutions Finder",
+        "Tell us what you're upgrading and we'll recommend the perfect products for your home.",
+        "Find My Solution",
+        urgency="medium", display_duration_seconds=18,
+    ),
+    (AbandonReason.COULDNT_FIND_IT, PersonaType.GIFT_SHOPPER): _template(
+        InterventionActionType.OVERLAY, "gift_finder",
+        "🎁 Gift Finder Tool",
+        "Not sure what to get? Use our Gift Finder — tell us who it's for and we'll suggest the perfect gift.",
+        "Find the Perfect Gift",
+        urgency="medium", display_duration_seconds=18,
+    ),
+    (AbandonReason.COULDNT_FIND_IT, PersonaType.STUDENT_BUDGET): _template(
+        InterventionActionType.OVERLAY, "student_essentials",
+        "🎓 Student Essentials Guide",
+        "Check out our curated student essentials — everything you need for school at student-friendly prices.",
+        "Browse Student Picks",
+        urgency="medium", display_duration_seconds=18,
+    ),
 
     # Distraction
     (AbandonReason.DISTRACTION, PersonaType.VALUE_HUNTER): _template(
@@ -253,6 +365,34 @@ _INTERVENTION_MATRIX: dict[tuple[str, str], dict] = {
         "Pending Order Reminder",
         "{product_name} is awaiting your order. Secure business pricing before it expires.",
         "Complete Order",
+        urgency="medium",
+    ),
+    (AbandonReason.DISTRACTION, PersonaType.IMPULSE_BUYER): _template(
+        InterventionActionType.PUSH_NOTIFICATION, "urgency_reminder",
+        "Going Fast! ⚡",
+        "{product_name} is almost sold out. Grab yours before someone else does!",
+        "Buy Now",
+        urgency="high",
+    ),
+    (AbandonReason.DISTRACTION, PersonaType.HOME_UPGRADER): _template(
+        InterventionActionType.EMAIL_TEMPLATE, "home_project_reminder",
+        "Your Home Upgrade Awaits",
+        "Still planning your upgrade? {product_name} is saved in your cart — ready when you are.",
+        "Continue Upgrade",
+        urgency="low",
+    ),
+    (AbandonReason.DISTRACTION, PersonaType.GIFT_SHOPPER): _template(
+        InterventionActionType.PUSH_NOTIFICATION, "gift_reminder",
+        "Don't Forget Your Gift! 🎁",
+        "{product_name} is still in your cart. Need it gift-wrapped? We've got you covered.",
+        "Complete Gift Order",
+        urgency="medium",
+    ),
+    (AbandonReason.DISTRACTION, PersonaType.STUDENT_BUDGET): _template(
+        InterventionActionType.PUSH_NOTIFICATION, "student_cart_reminder",
+        "Your Cart is Waiting 📚",
+        "Hey! {product_name} is still in your cart. Student deal expires soon — don't miss out.",
+        "Complete Purchase",
         urgency="medium",
     ),
 }

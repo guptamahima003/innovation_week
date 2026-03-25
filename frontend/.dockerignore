@@ -1,0 +1,10 @@
+node_modules/
+node_modules copy/
+src copy/
+.next/
+.env.local
+.env
+.DS_Store
+.git/
+README.md
+tsconfig.tsbuildinfo

@@ -8,6 +8,10 @@ export const PERSONA_COLORS: Record<string, string> = {
   loyalty_power_user: "#3b82f6",
   lapsing_customer: "#ef4444",
   business_buyer: "#8b5cf6",
+  impulse_buyer: "#ec4899",
+  home_upgrader: "#14b8a6",
+  gift_shopper: "#f97316",
+  student_budget: "#06b6d4",
 };
 
 export const PERSONA_LABELS: Record<string, string> = {
@@ -17,6 +21,10 @@ export const PERSONA_LABELS: Record<string, string> = {
   loyalty_power_user: "Loyalty Power User",
   lapsing_customer: "Lapsing Customer",
   business_buyer: "Business Buyer",
+  impulse_buyer: "Impulse Buyer",
+  home_upgrader: "Home Upgrader",
+  gift_shopper: "Gift Shopper",
+  student_budget: "Student Budget",
 };
 
 export const PERSONA_ICONS: Record<string, string> = {
@@ -26,6 +34,10 @@ export const PERSONA_ICONS: Record<string, string> = {
   loyalty_power_user: "⭐",
   lapsing_customer: "💤",
   business_buyer: "💼",
+  impulse_buyer: "⚡",
+  home_upgrader: "🏠",
+  gift_shopper: "🎁",
+  student_budget: "🎓",
 };
 
 export const ABANDON_TYPE_LABELS: Record<string, string> = {

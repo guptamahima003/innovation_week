@@ -1,0 +1,890 @@
+================================================================================
+  360 USER PERSONA ENGINE - ARCHITECTURE DIAGRAMS & FLOWS
+================================================================================
+
+  Table of Contents:
+    1. Data Inputs & Sources
+    2. Persona Definition Signals
+    3. New Customer Personas (Cold Start) - 5 Examples
+    4. Existing Customer Persona Evolution - 5 Examples
+    5. Persona Transition Logic & Time Horizon
+    6. Personalization Outcomes
+
+================================================================================
+
+
+                    SYSTEM ARCHITECTURE (HIGH-LEVEL)
+================================================================================
+
+  +---------------------------------------------------------------------+
+  |                        DATA LAYER                                   |
+  |  +------------------+  +------------------+  +------------------+   |
+  |  | 1st-Party        |  | Behavioral       |  | Contextual       |   |
+  |  | Transactional    |  | Event Stream     |  | & Demographic    |   |
+  |  | - Orders/Spend   |  | - Browse events  |  | - Income band    |   |
+  |  | - Returns        |  | - Search queries |  | - Home ownership |   |
+  |  | - Cart history   |  | - Cart actions   |  | - Household size |   |
+  |  | - Payment prefs  |  | - Page dwell     |  | - Life stage     |   |
+  |  | - Loyalty status |  | - Exit intent    |  | - Location (zip) |   |
+  |  +--------+---------+  +--------+---------+  +--------+---------+   |
+  |           |                      |                      |           |
+  +-----------|----------------------|----------------------|-----------+
+              |                      |                      |
+              v                      v                      v
+  +---------------------------------------------------------------------+
+  |                     FEATURE ENGINEERING                             |
+  |                                                                     |
+  |   14 Numerical Features extracted per customer:                     |
+  |   [tech_affinity, price_sensitivity, deal_seeking_score,            |
+  |    research_depth, brand_loyalty_score, avg_order_value,            |
+  |    lifetime_spend, total_site_visits_90d, avg_session_duration_min, |
+  |    cart_abandonment_rate, propensity_to_churn,                      |
+  |    days_since_last_visit, lifetime_order_count, return_rate]        |
+  |                                                                     |
+  +----------------------------+----------------------------------------+
+                               |
+                               v
+  +---------------------------------------------------------------------+
+  |                     ML PERSONA ENGINE                               |
+  |                                                                     |
+  |   +------------------+     +------------------+                     |
+  |   | StandardScaler   | --> | K-Means (k=10)   |                     |
+  |   | (normalize to    |     | (find 10 natural  |                     |
+  |   |  zero mean,      |     |  clusters in 14D  |                     |
+  |   |  unit variance)  |     |  feature space)   |                     |
+  |   +------------------+     +--------+----------+                     |
+  |                                     |                               |
+  |                                     v                               |
+  |                      +-----------------------------+                |
+  |                      | Cluster-to-Persona Mapping  |                |
+  |                      | (scoring rules assign names |                |
+  |                      |  to cluster centroids)      |                |
+  |                      +-----------------------------+                |
+  |                                     |                               |
+  +-------------------------------------|-------------------------------+
+                                        |
+                                        v
+  +---------------------------------------------------------------------+
+  |                     10 CUSTOMER PERSONAS                            |
+  |                                                                     |
+  |   tech_enthusiast  value_hunter   considered_researcher             |
+  |   loyalty_power    lapsing        business_buyer                    |
+  |   impulse_buyer    home_upgrader  gift_shopper  student_budget      |
+  |                                                                     |
+  +---------------------------------------------------------------------+
+                                        |
+                    +-------------------+-------------------+
+                    |                                       |
+                    v                                       v
+  +-------------------------------+   +-------------------------------+
+  |   REAL-TIME EVENT PIPELINE    |   |   PERSONALIZATION LAYER       |
+  |                               |   |                               |
+  |   Event -> Abandon Detect     |   |   Persona x Reason -> Action  |
+  |         -> Reason Classify    |   |   50 unique interventions     |
+  |         -> Intervention       |   |   Overlays, Push, Email       |
+  |         -> Reassignment       |   |                               |
+  +-------------------------------+   +-------------------------------+
+
+
+================================================================================
+  1. DATA INPUTS & SOURCES
+================================================================================
+
+  +=========================================================================+
+  |                    BEST BUY DATA ECOSYSTEM                              |
+  +=========================================================================+
+  |                                                                         |
+  |  FIRST-PARTY DATA SOURCES                                              |
+  |  ========================                                              |
+  |                                                                         |
+  |  +-- IDENTITY & ACCOUNT -----+  +-- LOYALTY PROGRAM -----------+      |
+  |  | - Customer ID             |  | - Tier (none/member/silver/  |      |
+  |  | - Name, email, age        |  |   gold/elite)                |      |
+  |  | - Location (zip, city,    |  | - Points balance             |      |
+  |  |   state)                  |  | - Rewards redemption history |      |
+  |  +--------------------------+  +-------------------------------+      |
+  |                                                                         |
+  |  +-- TRANSACTIONAL ----------+  +-- BEHAVIORAL (REAL-TIME) ----+      |
+  |  | - Lifetime order count    |  | - Page views / browse events |      |
+  |  | - Lifetime spend ($)      |  | - Search queries             |      |
+  |  | - Avg order value ($)     |  | - Add-to-cart actions        |      |
+  |  | - Days since last purchase|  | - Cart abandonment events    |      |
+  |  | - Return rate             |  | - Checkout start/complete    |      |
+  |  | - Last 3 purchases        |  | - Page leave / exit intent   |      |
+  |  | - Top categories          |  | - Session duration (minutes) |      |
+  |  | - Preferred payment method|  | - Pages per session          |      |
+  |  | - Has financing           |  | - Site visits (last 90 days) |      |
+  |  +--------------------------+  | - Product views (last 90d)   |      |
+  |                                 | - Wishlist additions         |      |
+  |                                 +-------------------------------+      |
+  |                                                                         |
+  |  +-- PREFERENCE DATA --------+  +-- ENGAGEMENT DATA -----------+      |
+  |  | - Preferred brands (list) |  | - Email open rate            |      |
+  |  | - Price sensitivity (0-1) |  | - Push notification opt-in   |      |
+  |  | - Tech affinity (0-1)     |  | - App installed (yes/no)     |      |
+  |  | - Deal seeking score(0-1) |  | - Communication preference   |      |
+  |  | - Research depth (0-1)    |  |   (email/sms/push/none)      |      |
+  |  | - Brand loyalty (0-1)     |  | - Mobile vs desktop %        |      |
+  |  | - Category prefs (dict)   |  +-------------------------------+      |
+  |  +--------------------------+                                          |
+  |                                                                         |
+  |  CONTEXTUAL / DEMOGRAPHIC DATA                                         |
+  |  ==============================                                        |
+  |                                                                         |
+  |  +-- HOUSEHOLD & LIFE -------+  +-- RISK INDICATORS -----------+      |
+  |  | - Estimated income band   |  | - Propensity to churn (0-1)  |      |
+  |  | - Home ownership (own/    |  | - Days since last visit      |      |
+  |  |   rent)                   |  | - Cart abandonment rate      |      |
+  |  | - Household size          |  +-------------------------------+      |
+  |  | - Has children            |                                         |
+  |  | - Life stage (student,    |                                         |
+  |  |   young_professional,     |                                         |
+  |  |   young_family,           |                                         |
+  |  |   established_family,     |                                         |
+  |  |   empty_nester, retired)  |                                         |
+  |  +--------------------------+                                          |
+  |                                                                         |
+  +=========================================================================+
+
+  DATA FLOW INTO PERSONA ENGINE:
+
+  All sources above --+--> 14 Feature Vector ---> K-Means Clustering
+                      |
+                      +--> Full Profile stored in ProfileStore (in-memory)
+
+
+================================================================================
+  2. PERSONA DEFINITION SIGNALS
+================================================================================
+
+  HOW SIGNALS MAP TO PERSONAS (WEIGHTED SCORING RULES)
+  =====================================================
+
+  Each persona is identified by a scoring function applied to cluster
+  centroids. The function defines which signals matter most and how they
+  combine. Higher score = better match for that persona.
+
+  +---------------------+--------------------------------------------------+
+  | PERSONA             | SCORING FORMULA (what matters most)              |
+  +---------------------+--------------------------------------------------+
+  | Tech Enthusiast     | + tech_affinity                                  |
+  |                     | - price_sensitivity                              |
+  |                     | Key: HIGH tech, LOW price concern                |
+  +---------------------+--------------------------------------------------+
+  | Value Hunter        | + price_sensitivity                              |
+  |                     | + deal_seeking_score                             |
+  |                     | + cart_abandonment_rate                           |
+  |                     | Key: price + deals + abandons at full price      |
+  +---------------------+--------------------------------------------------+
+  | Considered          | + research_depth                                 |
+  | Researcher          | + avg_session_duration / 30                      |
+  |                     | Key: deep research + long sessions               |
+  +---------------------+--------------------------------------------------+
+  | Loyalty Power User  | + brand_loyalty_score                            |
+  |                     | + lifetime_spend / 20000                         |
+  |                     | - propensity_to_churn                            |
+  |                     | Key: loyal + high LTV + low churn                |
+  +---------------------+--------------------------------------------------+
+  | Lapsing Customer    | + propensity_to_churn                            |
+  |                     | + days_since_last_visit / 100                    |
+  |                     | - total_site_visits_90d / 50                     |
+  |                     | Key: high churn + inactive + few visits          |
+  +---------------------+--------------------------------------------------+
+  | Business Buyer      | + avg_order_value / 1000                         |
+  |                     | + lifetime_spend / 20000                         |
+  |                     | - deal_seeking_score                             |
+  |                     | Key: high AOV + high spend + not deal-seeking    |
+  +---------------------+--------------------------------------------------+
+  | Impulse Buyer       | - research_depth                                 |
+  |                     | - avg_session_duration / 30                      |
+  |                     | + cart_abandonment_rate                           |
+  |                     | Key: NO research + quick sessions                |
+  +---------------------+--------------------------------------------------+
+  | Home Upgrader       | + avg_order_value / 1000                         |
+  |                     | + 0.5 * tech_affinity                            |
+  |                     | - deal_seeking_score                             |
+  |                     | Key: mid-high AOV + moderate tech + not deals    |
+  +---------------------+--------------------------------------------------+
+  | Gift Shopper        | + research_depth * 0.5                           |
+  |                     | + price_sensitivity * 0.3                        |
+  |                     | + brand_loyalty_score * 0.2                      |
+  |                     | Key: balanced moderate signals across all dims   |
+  +---------------------+--------------------------------------------------+
+  | Student Budget      | + price_sensitivity                              |
+  |                     | - lifetime_spend / 20000                         |
+  |                     | - avg_order_value / 1000                         |
+  |                     | Key: HIGH price sensitivity + LOW spend/AOV      |
+  +---------------------+--------------------------------------------------+
+
+  SIGNAL PRIORITY TIERS:
+
+  Tier 1 (Primary differentiators - highest weight):
+    tech_affinity, price_sensitivity, research_depth, brand_loyalty_score,
+    propensity_to_churn
+
+  Tier 2 (Spending pattern signals):
+    avg_order_value, lifetime_spend, deal_seeking_score
+
+  Tier 3 (Behavioral engagement signals):
+    total_site_visits_90d, avg_session_duration_min, cart_abandonment_rate
+
+  Tier 4 (Recency & history):
+    days_since_last_visit, lifetime_order_count, return_rate
+
+
+================================================================================
+  3. NEW CUSTOMER PERSONAS (COLD START) - 5 EXAMPLES
+================================================================================
+
+  COLD START FLOW:
+
+  New Customer Arrives
+        |
+        v
+  +---------------------+     +--------------------+     +----------------+
+  | Collect initial     | --> | Extract 14 feature | --> | K-Means finds  |
+  | signals from first  |     | vector from        |     | nearest cluster|
+  | actions + any known |     | available data     |     | centroid       |
+  | profile data        |     | (defaults for      |     |                |
+  |                     |     |  missing values)   |     |                |
+  +---------------------+     +--------------------+     +-------+--------+
+                                                                  |
+                                                                  v
+                                                         +----------------+
+                                                         | Assign persona |
+                                                         | + confidence   |
+                                                         | score          |
+                                                         +----------------+
+
+  -----------------------------------------------------------------------
+  CUSTOMER A: "Priya" - The Student
+  -----------------------------------------------------------------------
+
+    Initial Actions (first session):
+      - Browses laptops under $500
+      - Searches "cheap gaming laptop"
+      - Adds Lenovo IdeaPad ($379) to cart
+      - Leaves cart when sees total with tax
+      - Returns next day, searches "student discount laptop"
+
+    Data Collected:
+      tech_affinity: 0.55    (browsing tech, but budget range)
+      price_sensitivity: 0.85 (searching "cheap", left at price)
+      deal_seeking_score: 0.75 (searching for discounts)
+      research_depth: 0.30    (quick browse, not reading reviews)
+      brand_loyalty_score: 0.20 (no brand preference shown)
+      avg_order_value: 379     (single item attempted)
+      lifetime_spend: 0        (new customer)
+      total_site_visits_90d: 2
+      avg_session_duration_min: 6
+      cart_abandonment_rate: 1.0 (abandoned only cart)
+      propensity_to_churn: 0.3
+      days_since_last_visit: 1
+      lifetime_order_count: 0
+      return_rate: 0.0
+
+    Persona Assignment: --> STUDENT BUDGET (confidence: 0.22)
+    Why: High price_sensitivity (0.85) + low lifetime_spend ($0) +
+         low avg_order_value ($379) maximizes the student_budget score.
+
+  -----------------------------------------------------------------------
+  CUSTOMER B: "Marcus" - The Gadget Lover
+  -----------------------------------------------------------------------
+
+    Initial Actions (first session):
+      - Goes straight to "New Arrivals"
+      - Browses Apple Vision Pro ($3,499), reads specs for 2 minutes
+      - Browses Sony WH-1000XM5 ($349), adds to cart immediately
+      - Browses iPhone 15 Pro ($1,199), adds to cart
+      - Completes checkout with Apple Pay
+
+    Data Collected:
+      tech_affinity: 0.92    (all premium tech products)
+      price_sensitivity: 0.10 (bought $1,548 without hesitation)
+      deal_seeking_score: 0.08 (never searched for deals)
+      research_depth: 0.35    (read specs briefly, decided fast)
+      brand_loyalty_score: 0.70 (all Apple/Sony)
+      avg_order_value: 1548
+      lifetime_spend: 1548
+      total_site_visits_90d: 1
+      avg_session_duration_min: 12
+      cart_abandonment_rate: 0.0
+      propensity_to_churn: 0.1
+      days_since_last_visit: 0
+      lifetime_order_count: 1
+      return_rate: 0.0
+
+    Persona Assignment: --> TECH ENTHUSIAST (confidence: 0.19)
+    Why: Extremely high tech_affinity (0.92) combined with very low
+         price_sensitivity (0.10) maximizes the tech_enthusiast score.
+
+  -----------------------------------------------------------------------
+  CUSTOMER C: "Dana" - The Deal Seeker
+  -----------------------------------------------------------------------
+
+    Initial Actions (first session):
+      - Clicks "Deals" section first
+      - Browses 8 products, all in sale/clearance
+      - Searches "open box TV deals"
+      - Adds Samsung 55" TV (open box, $489) to cart
+      - Sees shipping cost, abandons cart
+      - Gets push notification: "Free shipping on orders over $499!"
+      - Returns 30 min later, adds $15 HDMI cable, completes purchase
+
+    Data Collected:
+      tech_affinity: 0.40    (TV/accessories, not bleeding-edge)
+      price_sensitivity: 0.88 (abandoned over shipping cost!)
+      deal_seeking_score: 0.92 (all deal/clearance browsing)
+      research_depth: 0.25    (quick scans, no deep review reading)
+      brand_loyalty_score: 0.15 (went for cheapest, any brand)
+      avg_order_value: 504
+      lifetime_spend: 504
+      total_site_visits_90d: 2
+      avg_session_duration_min: 8
+      cart_abandonment_rate: 0.50 (1 abandon out of 2 attempts)
+      propensity_to_churn: 0.25
+      days_since_last_visit: 0
+      lifetime_order_count: 1
+      return_rate: 0.0
+
+    Persona Assignment: --> VALUE HUNTER (confidence: 0.24)
+    Why: Highest combined (price_sensitivity + deal_seeking + cart_abandon)
+         = 0.88 + 0.92 + 0.50 = 2.30. Classic deal-seeker behavior.
+
+  -----------------------------------------------------------------------
+  CUSTOMER D: "James" - The IT Manager
+  -----------------------------------------------------------------------
+
+    Initial Actions (first session):
+      - Searches "Dell Latitude bulk order"
+      - Browses business laptops category
+      - Views Dell Latitude 5540 ($1,249), reads warranty details
+      - Searches "net 30 payment terms"
+      - Calls business sales (tracked as exit to business page)
+      - Returns next day, orders 5x Dell Latitude = $6,245
+
+    Data Collected:
+      tech_affinity: 0.60    (business tech, not consumer toys)
+      price_sensitivity: 0.20 (bulk buying at full price)
+      deal_seeking_score: 0.10 (searched payment terms, not deals)
+      research_depth: 0.65    (read warranty, checked specs)
+      brand_loyalty_score: 0.50 (brand-specific search: Dell)
+      avg_order_value: 6245
+      lifetime_spend: 6245
+      total_site_visits_90d: 2
+      avg_session_duration_min: 15
+      cart_abandonment_rate: 0.0
+      propensity_to_churn: 0.15
+      days_since_last_visit: 0
+      lifetime_order_count: 1
+      return_rate: 0.0
+
+    Persona Assignment: --> BUSINESS BUYER (confidence: 0.18)
+    Why: Extremely high AOV ($6,245) + high lifetime_spend + very low
+         deal_seeking maximizes (AOV/1K + LTV/20K - deal_seeking).
+
+  -----------------------------------------------------------------------
+  CUSTOMER E: "Sofia" - The Gift Buyer
+  -----------------------------------------------------------------------
+
+    Initial Actions (first session):
+      - Searches "gifts for dad"
+      - Browses categories she's never bought from: grills, tools
+      - Views Bose QC Ultra headphones, reads 12 reviews
+      - Searches "best gifts under $300"
+      - Adds Bose QC Ultra ($299) to cart
+      - Checks "gift wrap available?" in product details
+      - Hesitates at checkout (3 min on page), then completes
+
+    Data Collected:
+      tech_affinity: 0.35    (buying for someone else, not her category)
+      price_sensitivity: 0.50 (budget-aware but not extreme)
+      deal_seeking_score: 0.40 (searched by price range, not "deal")
+      research_depth: 0.65    (read 12 reviews on unfamiliar product)
+      brand_loyalty_score: 0.30 (no brand preference, bought Bose)
+      avg_order_value: 299
+      lifetime_spend: 299
+      total_site_visits_90d: 1
+      avg_session_duration_min: 18
+      cart_abandonment_rate: 0.0
+      propensity_to_churn: 0.35
+      days_since_last_visit: 0
+      lifetime_order_count: 1
+      return_rate: 0.0
+
+    Persona Assignment: --> GIFT SHOPPER (confidence: 0.14)
+    Why: Balanced moderate signals across research (0.65), price (0.50),
+         brand loyalty (0.30) match the gift_shopper scoring formula.
+         Browsing unfamiliar categories is the behavioral signature.
+
+    Note: Lower confidence (0.14) because Gift Shopper overlaps with
+    several other moderate personas. System still assigns correctly
+    because the combination pattern is distinctive.
+
+
+================================================================================
+  4. EXISTING CUSTOMER PERSONA EVOLUTION - 5 EXAMPLES
+================================================================================
+
+  EVOLUTION FLOW:
+
+  Existing Customer (has established persona)
+        |
+        v
+  +---------------------+     +--------------------+     +----------------+
+  | New actions/events  | --> | Event counter      | --> | Threshold hit? |
+  | stream in via       |     | increments per     |     | (>= 20 events) |
+  | WebSocket           |     | customer           |     |                |
+  +---------------------+     +--------------------+     +-------+--------+
+                                                                  |
+                                                           Yes    |    No
+                                                     +-----+     +----> Continue
+                                                     |                  tracking
+                                                     v
+                                              +----------------+
+                                              | Update profile |
+                                              | from session   |
+                                              | history        |
+                                              +-------+--------+
+                                                      |
+                                                      v
+                                              +----------------+
+                                              | Re-predict     |
+                                              | persona via    |
+                                              | K-Means        |
+                                              +-------+--------+
+                                                      |
+                                               Changed?
+                                              /        \
+                                            Yes         No
+                                            |           |
+                                            v           v
+                                     Update persona  Update confidence
+                                     + broadcast     only
+                                     to dashboard
+
+  -----------------------------------------------------------------------
+  EXAMPLE 1: Lapsing -> Value Hunter (RE-ENGAGEMENT)
+  -----------------------------------------------------------------------
+
+    Customer: "Rachel" | Current Persona: LAPSING CUSTOMER
+    Profile before: churn=0.75, days_since_visit=60, visits_90d=5
+
+    What happens over 3 weeks:
+      Week 1: Rachel receives win-back email with 15% off
+              - Clicks email, browses sale section (3 visits)
+              - Searches "TV deals under $500"
+      Week 2: Returns organically, browses 4 more products
+              - Adds open-box Samsung TV to cart, abandons at shipping
+              - Comes back next day, searches "free shipping code"
+      Week 3: Visits daily checking for price drops
+              - Adds 2 items on sale, abandons one, buys the other
+
+    After 20+ events, profile updates:
+      days_since_last_visit: 60 -> 0
+      total_site_visits_90d: 5 -> 22
+      propensity_to_churn: 0.75 -> 0.53 (reduced 30% due to activity)
+      cart_abandonment_rate: 0.45 -> 0.60 (high abandon on non-deals)
+
+    New signal pattern: HIGH price_sensitivity + HIGH deal_seeking +
+                        HIGH cart_abandonment = VALUE HUNTER pattern
+
+    RESULT: Lapsing Customer --> VALUE HUNTER
+    Dashboard shows persona shift in real-time.
+
+  -----------------------------------------------------------------------
+  EXAMPLE 2: Value Hunter -> Loyalty Power User (UPGRADE)
+  -----------------------------------------------------------------------
+
+    Customer: "Kevin" | Current Persona: VALUE HUNTER
+    Profile before: price_sens=0.82, brand_loyalty=0.30, LTV=$3000
+
+    What happens over 2 months:
+      Month 1: Kevin signs up for My Best Buy membership
+              - Starts buying regularly (3 orders in 30 days)
+              - Buys from multiple categories (audio + computing + gaming)
+              - Stops browsing deals section as much
+      Month 2: Earns Silver tier, now gets member pricing
+              - Buys preferred brands (Samsung, Sony) repeatedly
+              - Lifetime spend crosses $8,000
+              - Cart abandonment drops as he trusts the store
+
+    After accumulated events trigger reassessment:
+      brand_loyalty_score: 0.30 -> 0.65 (repeat brand purchases)
+      lifetime_spend: $3000 -> $8000
+      propensity_to_churn: 0.30 -> 0.08 (very engaged)
+      price_sensitivity: 0.82 -> 0.55 (less price-driven now)
+
+    New signal pattern: HIGH loyalty + HIGH LTV + LOW churn
+                        = LOYALTY POWER USER pattern
+
+    RESULT: Value Hunter --> LOYALTY POWER USER
+
+  -----------------------------------------------------------------------
+  EXAMPLE 3: Tech Enthusiast -> Tech Enthusiast (STABLE - NO CHANGE)
+  -----------------------------------------------------------------------
+
+    Customer: "Alex" | Current Persona: TECH ENTHUSIAST
+    Profile: tech=0.88, price_sens=0.15, AOV=$450
+
+    What happens over 1 month:
+      - Buys AirPods Pro ($249), iPad Pro ($1,099)
+      - Browses Apple Vision Pro, reads hands-on review
+      - Adds Galaxy S24 Ultra to wishlist
+      - Searches "best noise-canceling headphones 2024"
+      - All premium tech, all typical behavior
+
+    After reassessment:
+      tech_affinity: 0.88 -> 0.90 (still rising)
+      price_sensitivity: 0.15 -> 0.12 (premium purchases confirmed)
+      avg_order_value: $450 -> $520 (higher with iPad)
+
+    Signal pattern: Still maximizes (tech_affinity - price_sensitivity)
+    Confidence actually INCREASES from 0.15 -> 0.19
+
+    RESULT: Tech Enthusiast --> Tech Enthusiast (STABLE)
+    Confidence updated, persona unchanged. This is the most common case.
+
+  -----------------------------------------------------------------------
+  EXAMPLE 4: Impulse Buyer -> Considered Researcher (BEHAVIOR SHIFT)
+  -----------------------------------------------------------------------
+
+    Customer: "Tanya" | Current Persona: IMPULSE BUYER
+    Profile: research=0.15, session_dur=4min, cart_abandon=0.30
+
+    What happens: Tanya is buying a $2,000 camera for a new hobby.
+      Week 1: Browses 6 cameras, reads detailed specs on each
+              - Session duration jumps to 25 minutes
+              - Reads 40+ reviews on Canon EOS R6
+              - Compares Canon vs Sony vs Nikon in detail
+      Week 2: Watches comparison videos (tracked as long dwell)
+              - Searches "Canon R6 vs Sony A7 IV detailed comparison"
+              - Adds Canon to cart, removes it, adds Sony, removes it
+      Week 3: Finally decides on Canon EOS R6, purchases
+
+    After reassessment:
+      research_depth: 0.15 -> 0.55 (massive increase in review reading)
+      avg_session_duration: 4 -> 18 min (long research sessions)
+      cart_abandonment_rate: 0.30 -> 0.50 (deliberation, not impulse)
+
+    New signal pattern: HIGH research + LONG sessions
+                        = CONSIDERED RESEARCHER pattern
+
+    RESULT: Impulse Buyer --> CONSIDERED RESEARCHER
+    Note: This could be temporary. If Tanya returns to quick purchases
+    after the camera buy, she may shift back after another 20 events.
+
+  -----------------------------------------------------------------------
+  EXAMPLE 5: Student Budget -> Impulse Buyer (LIFE CHANGE)
+  -----------------------------------------------------------------------
+
+    Customer: "Jordan" | Current Persona: STUDENT BUDGET
+    Profile: price_sens=0.80, AOV=$120, LTV=$1500
+
+    What happens: Jordan graduates and gets first full-time job.
+      Month 1: Spending pattern changes dramatically
+              - Buys AirPods Max ($549) without searching for deals
+              - Buys PS5 ($499) on first visit to gaming section
+              - Sessions are short (3-4 min), decisive
+              - No coupon searches, no "student discount" queries
+      Month 2: Continues quick purchases
+              - Adds items to cart and checks out in <2 minutes
+              - Research depth near zero
+              - Lifetime spend jumps from $1,500 to $4,200
+
+    After reassessment:
+      price_sensitivity: 0.80 -> 0.40 (no longer budget-constrained)
+      research_depth: 0.45 -> 0.12 (quick decisions)
+      avg_session_duration: 7 -> 3.5 min (fast sessions)
+      avg_order_value: $120 -> $380 (bigger purchases)
+      lifetime_spend: $1500 -> $4200
+
+    New signal pattern: LOW research + SHORT sessions + moderate AOV
+                        = IMPULSE BUYER pattern
+
+    RESULT: Student Budget --> IMPULSE BUYER
+
+
+================================================================================
+  5. PERSONA TRANSITION LOGIC & TIME HORIZON
+================================================================================
+
+  TRANSITION ARCHITECTURE:
+
+  +------------------------------------------------------------------+
+  |                    TRANSITION TRIGGER SYSTEM                     |
+  +------------------------------------------------------------------+
+  |                                                                  |
+  |  The system uses EVENT-BASED triggering, NOT time-based.         |
+  |                                                                  |
+  |  +-----------------------------------------------------------+  |
+  |  |                                                           |  |
+  |  |   Customer Event Stream                                  |  |
+  |  |   (browse, search, add_to_cart, checkout, page_leave...) |  |
+  |  |                                                           |  |
+  |  +---------------------------+-------------------------------+  |
+  |                              |                                  |
+  |                              v                                  |
+  |                   +--------------------+                        |
+  |                   | Per-Customer Event |                        |
+  |                   | Counter            |                        |
+  |                   | (resets after each |                        |
+  |                   |  reassessment)     |                        |
+  |                   +----------+---------+                        |
+  |                              |                                  |
+  |                    count >= 20?                                 |
+  |                     /          \                                |
+  |                   YES           NO                              |
+  |                   |             |                               |
+  |                   v             v                               |
+  |          +----------------+   Continue                         |
+  |          | REASSESSMENT   |   counting...                      |
+  |          | PIPELINE       |                                    |
+  |          +-------+--------+                                    |
+  |                  |                                             |
+  |                  v                                             |
+  |     +----------------------------+                             |
+  |     | 1. Aggregate all events    |                             |
+  |     |    across all sessions     |                             |
+  |     |    for this customer       |                             |
+  |     +----------------------------+                             |
+  |                  |                                             |
+  |                  v                                             |
+  |     +----------------------------+                             |
+  |     | 2. Update profile fields:  |                             |
+  |     |    - visits_90d = max(old, |                             |
+  |     |      event_count)          |                             |
+  |     |    - search_queries_90d    |                             |
+  |     |    - cart_additions_90d    |                             |
+  |     |    - days_since_visit = 0  |                             |
+  |     |    - cart_abandon_rate =   |                             |
+  |     |      0.6*new + 0.4*old     |                             |
+  |     |    - churn = old * 0.7     |                             |
+  |     |      (if events > 10)      |                             |
+  |     +----------------------------+                             |
+  |                  |                                             |
+  |                  v                                             |
+  |     +----------------------------+                             |
+  |     | 3. Run PersonaEngine       |                             |
+  |     |    .predict(profile)       |                             |
+  |     |    -> (new_persona, conf)  |                             |
+  |     +----------------------------+                             |
+  |                  |                                             |
+  |           Same persona?                                        |
+  |            /         \                                         |
+  |          YES          NO                                       |
+  |          |            |                                        |
+  |          v            v                                        |
+  |     Update conf  +----------------------------+                |
+  |     only         | 4. Update persona_type     |                |
+  |                  |    Re-index by persona     |                |
+  |                  |    Adjust dashboard dist   |                |
+  |                  |    Broadcast change         |                |
+  |                  +----------------------------+                |
+  |                                                                |
+  +------------------------------------------------------------------+
+
+  KEY DESIGN DECISIONS:
+
+  Q: Why event-based instead of time-based?
+  A: Time-based (e.g., "reassess every 90 days") misses rapid behavioral
+     shifts. A lapsing customer who suddenly becomes very active would
+     wait 90 days to be reclassified. Event-based catches this within
+     their first active session (20 events ~ 5-10 minutes of browsing).
+
+  Q: Why 20 events as the threshold?
+  A: 20 events is approximately:
+     - 5-10 product browses + some searches + cart actions
+     - Roughly 1 engaged shopping session
+     - Enough signal to detect a pattern change
+     - Not so low that noise causes false transitions
+
+  Q: How is the threshold configured?
+  A: REASSIGNMENT_EVENT_THRESHOLD in config.py (default: 20)
+     - Lower (10): More responsive, but noisier transitions
+     - Higher (50): More stable, but slower to adapt
+     - Production recommendation: 30-50 events
+
+  Q: What prevents flip-flopping?
+  A: The blended update formula (60% new behavior, 40% historical)
+     creates momentum. A single atypical session won't override
+     months of established behavior. Multiple consecutive sessions
+     of new behavior are needed to shift the persona.
+
+  TRANSITION PROBABILITY BY PERSONA PAIR:
+  (based on signal overlap between personas)
+
+    FROM \ TO           | Most Likely Transitions
+    --------------------|------------------------------------------
+    Tech Enthusiast     | -> Considered Researcher (starts researching)
+    Value Hunter        | -> Loyalty Power User (earns loyalty)
+                        | -> Student Budget (if spend drops)
+    Considered Research | -> Tech Enthusiast (starts buying premium)
+    Loyalty Power User  | -> Lapsing Customer (disengages)
+    Lapsing Customer    | -> Value Hunter (re-engages via deals)
+                        | -> Loyalty Power User (re-engages naturally)
+    Business Buyer      | -> Loyalty Power User (personal buying)
+    Impulse Buyer       | -> Considered Researcher (high-stake purchase)
+                        | -> Tech Enthusiast (if tech-focused)
+    Home Upgrader       | -> Loyalty Power User (becomes regular)
+    Gift Shopper        | -> Value Hunter (post-holiday deal seeking)
+    Student Budget      | -> Impulse Buyer (income increase)
+                        | -> Value Hunter (still price-sensitive)
+
+
+================================================================================
+  6. PERSONALIZATION OUTCOMES
+================================================================================
+
+  HOW PERSONAS DRIVE THE CUSTOMER EXPERIENCE:
+
+  +------------------------------------------------------------------+
+  |                   PERSONALIZATION PIPELINE                       |
+  +------------------------------------------------------------------+
+  |                                                                  |
+  |  Customer arrives --> Session created --> Persona assigned        |
+  |                                                                  |
+  |       +--------------------------------------------------+      |
+  |       |              PERSONA CONTEXT                     |      |
+  |       |                                                  |      |
+  |       |  persona_type: "value_hunter"                    |      |
+  |       |  persona_confidence: 0.24                        |      |
+  |       |  profile: { price_sensitivity: 0.82, ... }       |      |
+  |       |                                                  |      |
+  |       +---+------------------+-------------------+-------+      |
+  |           |                  |                   |              |
+  |           v                  v                   v              |
+  |   +--------------+  +--------------+  +------------------+     |
+  |   | ABANDON      |  | REASON       |  | INTERVENTION     |     |
+  |   | DETECTION    |  | CLASSIFIC.   |  | ENGINE           |     |
+  |   |              |  |              |  |                  |     |
+  |   | 4 types:     |  | 5 reasons:   |  | 3 channels:      |     |
+  |   | - Cart       |  | - Price      |  | - Overlay (live) |     |
+  |   | - Checkout   |  | - Payment    |  | - Push notif.    |     |
+  |   | - Product pg |  | - Confidence |  | - Email template |     |
+  |   | - Search     |  | - Cant find  |  |                  |     |
+  |   |              |  | - Distracted |  | 50 unique combos |     |
+  |   +--------------+  +--------------+  +------------------+     |
+  |                                                                  |
+  +------------------------------------------------------------------+
+
+  WHAT CHANGES BASED ON PERSONA:
+
+  +---------------------------------------------------------------------+
+  | PERSONALIZATION   | WHAT CHANGES                | EXAMPLE           |
+  | DIMENSION         |                             |                   |
+  +-------------------+-----------------------------+-------------------+
+  | Intervention      | Different message copy,     | Value Hunter gets |
+  | Messaging         | urgency level, discount %,  | "10% off!" while  |
+  |                   | and tone for the same       | Tech Enthusiast   |
+  |                   | abandon event               | gets "Member      |
+  |                   |                             | Price Unlocked"   |
+  +-------------------+-----------------------------+-------------------+
+  | Intervention      | Overlay (immediate, on-     | Impulse Buyer:    |
+  | Channel           | page), push notification    | urgent overlay    |
+  |                   | (gentle nudge), or email    | Lapsing Customer: |
+  |                   | (async follow-up)           | email campaign    |
+  +-------------------+-----------------------------+-------------------+
+  | Discount Level    | Higher discounts for more   | Student: 15% off  |
+  |                   | price-sensitive personas,   | Loyalty: 8% VIP   |
+  |                   | lower/none for premium      | Tech: 5% member   |
+  |                   | shoppers                    | Business: bulk %  |
+  +-------------------+-----------------------------+-------------------+
+  | Urgency Level     | How pressing the message    | Impulse: "2 hrs   |
+  |                   | feels - scarcity vs.        | left!" (HIGH)     |
+  |                   | helpful vs. informational   | Researcher: "Take |
+  |                   |                             | your time" (LOW)  |
+  +-------------------+-----------------------------+-------------------+
+  | Display Duration  | How long overlays stay      | Impulse: 10 sec   |
+  |                   | visible before auto-dismiss | Researcher: 25 sec|
+  +-------------------+-----------------------------+-------------------+
+  | Content Type      | What kind of content the    | Researcher: specs |
+  |                   | intervention presents       | comparison guide  |
+  |                   |                             | Gift: social proof|
+  |                   |                             | ratings & reviews |
+  +-------------------+-----------------------------+-------------------+
+  | Payment Options   | Which payment alternatives  | Student: BNPL no  |
+  |                   | are highlighted             | credit check      |
+  |                   |                             | Business: Net 30  |
+  |                   |                             | Home: 0% APR 24mo |
+  +-------------------+-----------------------------+-------------------+
+  | CTA (Call to      | Button text tailored to     | "Grab the Deal"   |
+  | Action)           | persona motivation          | vs "View Expert   |
+  |                   |                             | Comparison" vs    |
+  |                   |                             | "Pay in 4"        |
+  +-------------------+-----------------------------+-------------------+
+
+
+  NEW vs. EXISTING CUSTOMER PERSONALIZATION DIFFERENCES:
+
+  +---------------------------+-------------------------+------------------+
+  | ASPECT                    | NEW CUSTOMER            | EXISTING         |
+  +---------------------------+-------------------------+------------------+
+  | Persona Source            | Predicted from initial  | Established from |
+  |                           | profile data via        | 10K+ historical  |
+  |                           | POST /api/customer      | data points      |
+  +---------------------------+-------------------------+------------------+
+  | Confidence Level          | Lower (0.10 - 0.18)    | Higher (0.15 -   |
+  |                           | due to sparse data      | 0.25) with more  |
+  |                           |                         | behavioral data  |
+  +---------------------------+-------------------------+------------------+
+  | Intervention Aggression   | More conservative -     | More targeted -  |
+  |                           | system has less signal  | system confident |
+  |                           | to act on               | in the persona   |
+  +---------------------------+-------------------------+------------------+
+  | Persona Stability         | May shift quickly as    | More stable;     |
+  |                           | real behavior emerges   | requires          |
+  |                           | (first 20 events are    | sustained change |
+  |                           | most volatile)          | to shift         |
+  +---------------------------+-------------------------+------------------+
+  | Default Handling          | If all features are     | Full profile     |
+  |                           | defaults (0.5), system  | available; never |
+  |                           | assigns to whichever    | uses defaults    |
+  |                           | cluster the centroid    |                  |
+  |                           | [0.5, 0.5, ...] is     |                  |
+  |                           | closest to              |                  |
+  +---------------------------+-------------------------+------------------+
+  | Reassignment Speed        | Fast - first 20 events  | Slower - blended |
+  |                           | will likely refine the  | 60/40 formula    |
+  |                           | initial cold-start      | creates momentum |
+  |                           | assignment              | from history     |
+  +---------------------------+-------------------------+------------------+
+
+
+  COMPLETE INTERVENTION MATRIX (50 configurations):
+
+  Each cell represents a unique intervention with custom:
+  headline, body copy, CTA text, discount %, urgency, duration, channel
+
+  +-------------------+--------+--------+--------+--------+--------+
+  |                   | PRICE  | PAY    | CONFID | CANT   | DISTR  |
+  |                   | HIGH   | FRIC   | GAP    | FIND   | ACTION |
+  +-------------------+--------+--------+--------+--------+--------+
+  | Tech Enthusiast   |  OVR   |  OVR   |  OVR   |  OVR   | PUSH   |
+  | Value Hunter      |  OVR   |  OVR   |  OVR   |  OVR   | PUSH   |
+  | Cons. Researcher  |  OVR   |  OVR   |  OVR   |  OVR   | EMAIL  |
+  | Loyalty Power     |  OVR   |  OVR   |  OVR   |  OVR   | PUSH   |
+  | Lapsing Customer  | EMAIL  | PUSH   | EMAIL  | EMAIL  | EMAIL  |
+  | Business Buyer    |  OVR   |  OVR   |  OVR   |  OVR   | PUSH   |
+  | Impulse Buyer     |  OVR   |  OVR   |  OVR   |  OVR   | PUSH   |
+  | Home Upgrader     |  OVR   |  OVR   |  OVR   |  OVR   | EMAIL  |
+  | Gift Shopper      |  OVR   |  OVR   |  OVR   |  OVR   | PUSH   |
+  | Student Budget    |  OVR   |  OVR   |  OVR   |  OVR   | PUSH   |
+  +-------------------+--------+--------+--------+--------+--------+
+
+  OVR = Overlay (immediate on-page popup)
+  PUSH = Push notification (gentle nudge)
+  EMAIL = Email template (async follow-up)
+
+  Channel selection logic:
+  - Overlays: Used when customer is still on-site and intervention is
+              most effective in real-time (price, payment, confidence)
+  - Push:     Used for distractions where the customer may return soon;
+              gentle reminder without being intrusive
+  - Email:    Used for lapsing customers or when the customer has fully
+              left; allows longer-form content and deeper engagement
+
+
+================================================================================
+  END OF ARCHITECTURE & FLOWS DOCUMENT
+================================================================================

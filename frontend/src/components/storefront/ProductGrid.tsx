@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import type { Product } from "@/lib/types";
+import type { Product, PersonaType } from "@/lib/types";
 import { CATEGORY_LABELS, CATEGORY_IMAGES } from "@/lib/constants";
 import ProductCard from "./ProductCard";
 
 interface ProductGridProps {
   products: Product[];
   showCategoryFilter?: boolean;
+  personaType?: PersonaType | null;
 }
 
-export default function ProductGrid({ products, showCategoryFilter = false }: ProductGridProps) {
+export default function ProductGrid({ products, showCategoryFilter = false, personaType }: ProductGridProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Get unique categories from products
@@ -64,7 +65,7 @@ export default function ProductGrid({ products, showCategoryFilter = false }: Pr
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} personaType={personaType} />
           ))}
         </div>
       )}

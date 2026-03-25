@@ -1,20 +1,23 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { usePersonaStats } from "@/hooks/usePersonaStats";
 import { WS_URL, API_URL } from "@/lib/constants";
 import type { DashboardStats } from "@/lib/types";
-import StatsCards from "@/components/dashboard/StatsCards";
-import PersonaPieChart from "@/components/dashboard/PersonaPieChart";
-import AbandonReasonChart from "@/components/dashboard/AbandonReasonChart";
-import RevenueRecoveryCard from "@/components/dashboard/RevenueRecoveryCard";
+import OverallsSection from "@/components/dashboard/OverallsSection";
+import PersonaSelector from "@/components/dashboard/PersonaSelector";
+import PersonaDetailView from "@/components/dashboard/PersonaDetailView";
+import AggregateChartsView from "@/components/dashboard/AggregateChartsView";
 import AbandonEventFeed from "@/components/dashboard/AbandonEventFeed";
 import InterventionLog from "@/components/dashboard/InterventionLog";
 
 export default function DashboardPage() {
   const { stats, events, handleMessage } = useDashboardData();
+  const { personaStats } = usePersonaStats();
   const [restStats, setRestStats] = useState<DashboardStats | null>(null);
+  const [selectedPersona, setSelectedPersona] = useState<string | null>(null);
 
   const onMessage = useCallback(
     (data: unknown) => {
@@ -52,6 +55,24 @@ export default function DashboardPage() {
     stats.total_sessions > 0 || stats.total_abandons > 0
       ? stats
       : restStats ?? stats;
+
+  // Filter events by persona when one is selected
+  const filteredEvents = useMemo(
+    () =>
+      selectedPersona
+        ? events.filter((e) => e.persona_type === selectedPersona)
+        : events,
+    [events, selectedPersona]
+  );
+
+  // Find selected persona detail stats
+  const selectedPersonaDetail = useMemo(
+    () =>
+      selectedPersona
+        ? personaStats.find((p) => p.persona_type === selectedPersona) ?? null
+        : null,
+    [personaStats, selectedPersona]
+  );
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -98,30 +119,37 @@ export default function DashboardPage() {
 
       {/* Dashboard Content */}
       <main className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
-        {/* Top row: Stats Cards */}
-        <StatsCards stats={activeStats} />
+        {/* Row 1: Overalls Section */}
+        <OverallsSection stats={activeStats} />
 
-        {/* Middle row: Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <PersonaPieChart
-            personaDistribution={activeStats.persona_distribution}
-          />
-          <AbandonReasonChart
-            abandonsByReason={activeStats.abandons_by_reason}
-          />
-          <RevenueRecoveryCard
-            revenueAtRisk={activeStats.revenue_at_risk}
-            estimatedRecovered={activeStats.estimated_revenue_recovered}
-          />
+        {/* Row 2: Persona Selector + Detail / Aggregate View */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left: Persona Selector */}
+          <div className="col-span-12 lg:col-span-3">
+            <PersonaSelector
+              personas={personaStats}
+              selectedPersona={selectedPersona}
+              onSelect={setSelectedPersona}
+            />
+          </div>
+
+          {/* Right: Persona Detail OR Aggregate Charts */}
+          <div className="col-span-12 lg:col-span-9">
+            {selectedPersonaDetail ? (
+              <PersonaDetailView persona={selectedPersonaDetail} />
+            ) : (
+              <AggregateChartsView stats={activeStats} />
+            )}
+          </div>
         </div>
 
-        {/* Bottom row: Event Feed + Intervention Log */}
+        {/* Row 3: Event Feed + Intervention Log */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <AbandonEventFeed events={events} />
+            <AbandonEventFeed events={filteredEvents} />
           </div>
           <div className="lg:col-span-1">
-            <InterventionLog events={events} />
+            <InterventionLog events={filteredEvents} />
           </div>
         </div>
       </main>

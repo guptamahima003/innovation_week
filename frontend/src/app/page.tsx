@@ -1,19 +1,23 @@
 "use client";
 
 import React, { Suspense, useCallback, useEffect, useState } from "react";
-import { AppProvider } from "@/lib/AppContext";
+import { AppProvider, useApp } from "@/lib/AppContext";
 import { getProducts } from "@/lib/api";
 import type { Product } from "@/lib/types";
 import NavBar from "@/components/storefront/NavBar";
 import ProductGrid from "@/components/storefront/ProductGrid";
 import InterventionOverlay from "@/components/storefront/InterventionOverlay";
+import SessionNudge from "@/components/storefront/SessionNudge";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { PERSONA_ICONS, PERSONA_LABELS, PERSONA_COLORS } from "@/lib/constants";
 
 function HomeContent() {
+  const { session } = useApp();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const personaType = session?.persona_type ?? null;
 
   useEffect(() => {
     getProducts()
@@ -50,13 +54,27 @@ function HomeContent() {
             <p className="text-lg text-blue-100 mb-6">
               Discover the latest in tech, home appliances, and more. Personalized deals just for you.
             </p>
-            <Link
-              href="#products"
-              className="inline-flex items-center gap-2 bg-[#FFE000] text-[#0046BE] font-bold px-6 py-3 rounded-full hover:bg-yellow-300 transition-colors shadow-lg"
-            >
-              Shop Now
-              <ChevronRight className="w-5 h-5" />
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="#products"
+                className="inline-flex items-center gap-2 bg-[#FFE000] text-[#0046BE] font-bold px-6 py-3 rounded-full hover:bg-yellow-300 transition-colors shadow-lg"
+              >
+                Shop Now
+                <ChevronRight className="w-5 h-5" />
+              </Link>
+              {/* Persona-aware experience badge */}
+              {personaType && (
+                <div
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold shadow-lg border border-white/20 backdrop-blur-sm"
+                  style={{ backgroundColor: PERSONA_COLORS[personaType] + "cc" }}
+                >
+                  <span className="text-base">{PERSONA_ICONS[personaType]}</span>
+                  <span className="text-white">
+                    {PERSONA_LABELS[personaType]} Experience
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -84,9 +102,16 @@ function HomeContent() {
             ))}
           </div>
         ) : (
-          <ProductGrid products={filtered} showCategoryFilter />
+          <ProductGrid products={filtered} showCategoryFilter personaType={personaType} />
         )}
       </section>
+
+      {/* Session nudge — subtle toast shown once after browsing */}
+      <SessionNudge
+        personaType={personaType}
+        triggerAfterViews={1}
+        productViewCount={products.length > 0 ? 3 : 0}
+      />
 
       <InterventionOverlay />
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Activity, ShoppingCart, Zap, DollarSign } from "lucide-react";
+import { Activity, Users, ShoppingCart, Zap, DollarSign } from "lucide-react";
 import type { DashboardStats } from "@/lib/types";
 
 interface StatsCardsProps {
@@ -38,13 +38,20 @@ function StatCard({ icon, label, value, borderColor, iconBg }: StatCardProps) {
 
 export default function StatsCards({ stats }: StatsCardsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       <StatCard
         icon={<Activity className="w-6 h-6 text-blue-400" />}
         label="Total Sessions"
         value={stats.total_sessions.toLocaleString()}
         borderColor="#3b82f6"
         iconBg="#3b82f6"
+      />
+      <StatCard
+        icon={<Users className="w-6 h-6 text-purple-400" />}
+        label="Unique Customers"
+        value={(stats.unique_customers ?? 0).toLocaleString()}
+        borderColor="#a855f7"
+        iconBg="#a855f7"
       />
       <StatCard
         icon={<ShoppingCart className="w-6 h-6 text-red-400" />}
