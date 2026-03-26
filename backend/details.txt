@@ -64,10 +64,6 @@ The system uses a 3-stage pipeline to assign a persona to any new user:
   returns the predicted persona + confidence without creating a profile.
   Useful for real-time scoring during onboarding flows.
 
-  EXAMPLE:
-    Request:  { "tech_affinity": 0.9, "price_sensitivity": 0.1, ... }
-    Response: { "persona_type": "tech_enthusiast", "persona_confidence": 0.153 }
-
 
 2. THE 14 CLUSTERING FEATURES (SIGNALS)
 ================================================================================
@@ -95,12 +91,10 @@ These are the numerical signals used by the ML model to determine persona:
 3. PERSONA DEFINITIONS & SIGNAL PROFILES
 ================================================================================
 
-Each persona has a distinct signal fingerprint. Here is how the 14 features
-characteristically present for each persona:
+Each persona has a distinct signal fingerprint:
 
   +--------------------------+------+------+------+------+------+------+-------+
   | PERSONA                  | tech | price| deal | res. | loyal| AOV  | LTV   |
-  |                          | affi | sens | seek | depth| score| ($)  | ($)   |
   +--------------------------+------+------+------+------+------+------+-------+
   | Tech Enthusiast          | HIGH | LOW  | LOW  | MED  | MED+ | 450  | 8000  |
   | Value Hunter             | MED  | HIGH | HIGH | MED  | LOW  | 180  | 3000  |
@@ -114,326 +108,127 @@ characteristically present for each persona:
   | Student Budget           | MED+ | HIGH | HIGH | MED  | LOW  | 120  | 1500  |
   +--------------------------+------+------+------+------+------+------+-------+
 
-  +--------------------------+------+------+------+------+------+------+
-  | PERSONA                  | visits| sess | cart | churn| days | ret. |
-  |                          | /90d  | min  | aband| prop | since| rate |
-  +--------------------------+------+------+------+------+------+------+
-  | Tech Enthusiast          |  40  | 10   | 0.25 | 0.15 |  LOW | 0.10 |
-  | Value Hunter             |  35  |  8   | 0.55 | 0.30 |  LOW | 0.10 |
-  | Considered Researcher    |  25  | 18   | 0.20 | 0.20 |  LOW | 0.10 |
-  | Loyalty Power User       |  30  |  9   | 0.20 | 0.10 |  LOW | 0.10 |
-  | Lapsing Customer         |   5  |  4   | 0.45 | 0.75 | HIGH | 0.10 |
-  | Business Buyer           |  20  | 12   | 0.20 | 0.20 |  LOW | 0.10 |
-  | Impulse Buyer            |  45  |  4   | 0.30 | 0.20 |  LOW | 0.10 |
-  | Home Upgrader            |  15  | 14   | 0.25 | 0.20 |  LOW | 0.10 |
-  | Gift Shopper             |  18  | 10   | 0.35 | 0.30 |  MED | 0.10 |
-  | Student Budget           |  30  |  7   | 0.50 | 0.25 |  LOW | 0.10 |
-  +--------------------------+------+------+------+------+------+------+
-
-  Values shown are distribution centers (means). Actual values follow a
-  normal distribution around these centers with persona-specific variance.
-
 
 4. DETAILED PERSONA PROFILES
 ================================================================================
 
   4.1 TECH ENTHUSIAST (ID: tech_enthusiast, Color: #6366f1)
-  ----------------------------------------------------------
-  Description: Early adopter with high tech affinity and above-average order
-               values. Seeks the latest gadgets and innovations.
-  Key signals:
-    - tech_affinity > 0.65 (typically ~0.85) -- strongest differentiator
-    - price_sensitivity < 0.45 -- willing to pay premium
-    - avg_order_value ~$450 -- high-ticket tech purchases
-    - Preferred categories: computing, audio, phones, gaming, cameras, wearables
-    - Loyalty tier: mostly silver/gold/elite
-    - Income: $75K-200K+
-  Clustering rule: Maximizes (tech_affinity - price_sensitivity)
+  Early adopter, high tech affinity, above-average order values.
+  Rule: Maximizes (tech_affinity - price_sensitivity)
 
   4.2 VALUE HUNTER (ID: value_hunter, Color: #f59e0b)
-  ----------------------------------------------------------
-  Description: Price-sensitive shopper who actively seeks deals, compares
-               prices, and has high cart abandonment at full price.
-  Key signals:
-    - price_sensitivity > 0.60 (typically ~0.82)
-    - deal_seeking_score > 0.60 (typically ~0.85)
-    - cart_abandonment_rate > 0.30 (typically ~0.55) -- abandons at full price
-    - avg_order_value ~$180 -- budget-conscious
-    - Income: $25K-100K
-  Clustering rule: Maximizes (price_sensitivity + deal_seeking + cart_abandon)
+  Price-sensitive, actively seeks deals, high cart abandonment at full price.
+  Rule: Maximizes (price_sensitivity + deal_seeking + cart_abandon)
 
   4.3 CONSIDERED RESEARCHER (ID: considered_researcher, Color: #10b981)
-  ----------------------------------------------------------
-  Description: Deep researcher who reads reviews, compares specs, and takes
-               time before committing. Low impulse purchases.
-  Key signals:
-    - research_depth > 0.65 (typically ~0.85) -- reads extensively
-    - avg_session_duration > 8 min (typically ~18 min) -- long sessions
-    - cart_abandonment_rate ~0.20 -- low; buys when ready
-    - Preferred categories: computing, tv_video, cameras, audio, appliances
-    - Income: $50K-150K
-  Clustering rule: Maximizes (research_depth + session_duration/30)
+  Deep researcher, reads reviews, compares specs, takes time before committing.
+  Rule: Maximizes (research_depth + session_duration/30)
 
   4.4 LOYALTY POWER USER (ID: loyalty_power_user, Color: #3b82f6)
-  ----------------------------------------------------------
-  Description: High-LTV customer with strong brand loyalty and active
-               rewards membership. Multi-category buyer.
-  Key signals:
-    - brand_loyalty_score > 0.65 (typically ~0.85)
-    - lifetime_spend > $5K (typically ~$12K) -- high LTV
-    - propensity_to_churn < 0.25 (typically ~0.10) -- very sticky
-    - Loyalty tier: gold/elite only
-    - Buys across many categories
-  Clustering rule: Maximizes (brand_loyalty + lifetime_spend/20K - churn)
+  High-LTV, strong brand loyalty, active rewards membership.
+  Rule: Maximizes (brand_loyalty + lifetime_spend/20K - churn)
 
   4.5 LAPSING CUSTOMER (ID: lapsing_customer, Color: #ef4444)
-  ----------------------------------------------------------
-  Description: Previously active customer showing declining engagement.
-               High churn risk requiring win-back strategies.
-  Key signals:
-    - propensity_to_churn > 0.50 (typically ~0.75) -- strongest differentiator
-    - days_since_last_visit: HIGH (exponential, mean ~60 days)
-    - total_site_visits_90d < 15 (typically ~5) -- very low activity
-    - avg_session_duration ~4 min -- short, disengaged sessions
-  Clustering rule: Maximizes (churn + days_since_visit/100 - visits/50)
+  Declining engagement, high churn risk, needs win-back strategies.
+  Rule: Maximizes (churn + days_since_visit/100 - visits/50)
 
   4.6 BUSINESS BUYER (ID: business_buyer, Color: #8b5cf6)
-  ----------------------------------------------------------
-  Description: B2B purchaser buying in bulk with high AOV. Values service
-               SLAs and managed solutions over consumer deals.
-  Key signals:
-    - avg_order_value > $300 (typically ~$800) -- bulk purchases
-    - lifetime_spend > $3K (typically ~$15K)
-    - deal_seeking_score < 0.50 -- not deal-driven
-    - Preferred categories: computing, networking, phones, audio
-    - Income: $75K-200K
-  Clustering rule: Maximizes (AOV/1K + lifetime_spend/20K - deal_seeking)
+  B2B purchaser, bulk buying, high AOV, values service SLAs.
+  Rule: Maximizes (AOV/1K + lifetime_spend/20K - deal_seeking)
 
   4.7 IMPULSE BUYER (ID: impulse_buyer, Color: #ec4899)
-  ----------------------------------------------------------
-  Description: Fast decision-maker with low research depth and high
-               purchase rate. Responds strongly to urgency and scarcity.
-  Key signals:
-    - research_depth < 0.35 (typically ~0.15) -- doesn't research
-    - avg_session_duration < 10 min (typically ~4 min) -- quick sessions
-    - total_site_visits_90d > 15 (typically ~45) -- frequent visitor
-    - avg_order_value ~$200 -- smaller, spontaneous purchases
-    - Preferred categories: gaming, audio, wearables, phones, accessories
-  Clustering rule: Maximizes (-research_depth - session_duration/30 + cart_abandon)
+  Fast decisions, low research, responds to urgency/scarcity.
+  Rule: Maximizes (-research_depth - session_duration/30 + cart_abandon)
 
   4.8 HOME UPGRADER (ID: home_upgrader, Color: #14b8a6)
-  ----------------------------------------------------------
-  Description: Focused on appliances and smart home products. Mid-to-high
-               AOV, family-oriented, seasonal buyer.
-  Key signals:
-    - avg_order_value > $200 (typically ~$500)
-    - tech_affinity ~0.50 -- moderate, not bleeding-edge
-    - deal_seeking_score < 0.60 -- not primarily deal-driven
-    - research_depth ~0.60 -- does reasonable research
-    - Preferred categories: appliances, smart_home, tv_video, networking
-    - Life stage: established_family, young_family, empty_nester
-  Clustering rule: Maximizes (AOV/1K + 0.5*tech_affinity - deal_seeking)
+  Appliances/smart home focused, mid-high AOV, family-oriented.
+  Rule: Maximizes (AOV/1K + 0.5*tech_affinity - deal_seeking)
 
   4.9 GIFT SHOPPER (ID: gift_shopper, Color: #f97316)
-  ----------------------------------------------------------
-  Description: Seasonal buyer who browses outside usual categories. Checks
-               reviews for unfamiliar products and values gift-ready options.
-  Key signals:
-    - research_depth ~0.55 -- reads reviews for unfamiliar products
-    - price_sensitivity ~0.50 -- moderate budget awareness
-    - brand_loyalty_score ~0.40 -- low; buys outside usual brands
-    - cart_abandonment_rate ~0.35 -- moderate indecision
-    - Preferred categories: audio, wearables, smart_home, gaming, wellness
-    - Seasonal visit spikes (holidays, birthdays)
-  Clustering rule: Maximizes (research*0.5 + price_sens*0.3 + brand_loyalty*0.2)
+  Seasonal buyer, browses outside usual categories, values gift-ready options.
+  Rule: Maximizes (research*0.5 + price_sens*0.3 + brand_loyalty*0.2)
 
   4.10 STUDENT BUDGET (ID: student_budget, Color: #06b6d4)
-  ----------------------------------------------------------
-  Description: Price-sensitive younger demographic focused on education and
-               entertainment categories. Financing-inclined with limited spend.
-  Key signals:
-    - price_sensitivity > 0.55 (typically ~0.80) -- very budget-conscious
-    - avg_order_value < $300 (typically ~$120) -- low spend per order
-    - lifetime_spend < $4K (typically ~$1500) -- limited budget
-    - deal_seeking_score > 0.40 (typically ~0.70) -- actively seeks deals
-    - Life stage: student
-    - Income: under $25K-$50K
-    - Preferred categories: computing, audio, gaming, phones, accessories
-  Clustering rule: Maximizes (price_sensitivity - lifetime_spend/20K - AOV/1K)
+  Price-sensitive younger demographic, education/entertainment focused.
+  Rule: Maximizes (price_sensitivity - lifetime_spend/20K - AOV/1K)
 
 
 5. PERSONA REASSIGNMENT (DYNAMIC RE-BUCKETING)
 ================================================================================
 
-Personas are NOT static. The system re-evaluates a customer's persona when
-their behavior changes significantly:
+Personas are NOT static. Every 20 events, the system re-evaluates:
 
-  HOW IT WORKS:
-  1. Every event (browse, add_to_cart, search, checkout, page_leave, etc.)
-     increments a per-customer event counter.
-
-  2. When the counter reaches the REASSIGNMENT_EVENT_THRESHOLD (default: 20
-     events), the reassignment pipeline fires:
-
-     a. _update_profile_from_history() aggregates the customer's real session
-        data and updates their profile's behavioral fields:
-        - total_site_visits_90d -- updated to reflect actual activity
-        - search_queries_90d -- from observed search events
-        - cart_additions_90d -- from observed add_to_cart events
-        - days_since_last_visit -- set to 0 (currently active)
-        - cart_abandonment_rate -- recalculated from actual cart vs checkout
-          completions, blended 60/40 with historical rate
-        - propensity_to_churn -- reduced by 30% if >10 events observed
-          (active users are less likely to churn)
-
-     b. PersonaEngine.predict() is called with the updated profile to get
-        a new persona assignment.
-
-     c. If the persona CHANGED:
-        - The profile's persona_type and persona_confidence are updated
-        - The internal persona index is re-mapped
-        - The dashboard's persona_distribution counters are adjusted
-          (old persona decremented, new persona incremented)
-        - The change is broadcast to all connected dashboard clients
-
-     d. The event counter resets to 0 and the cycle begins again.
-
-  EXAMPLE REASSIGNMENT SCENARIO:
-    - A "Lapsing Customer" returns to the site and starts browsing actively.
-    - After 20 events, their profile is updated:
-      - days_since_last_visit: 60 -> 0
-      - total_site_visits_90d: 5 -> 25
-      - propensity_to_churn: 0.75 -> 0.53
-    - The ML model now places them in a different cluster, e.g., "Value Hunter"
-      (if they were browsing deals) or "Considered Researcher" (if they were
-      spending long sessions reading reviews).
-
-  CONFIGURATION:
-    REASSIGNMENT_EVENT_THRESHOLD can be adjusted in backend/config.py
-    (default: 20 events). Lower values = more frequent re-evaluation.
+  1. Profile behavioral fields are updated from real session data
+  2. PersonaEngine.predict() is called with updated features
+  3. If persona changes: profile updated, dashboard counters adjusted,
+     change broadcast to all connected dashboard clients
+  4. Event counter resets and cycle begins again
 
 
-6. ABANDON REASON CLASSIFICATION BY PERSONA
+6. ABANDON DETECTION & CLASSIFICATION
 ================================================================================
 
-When an abandonment is detected, the system classifies the likely reason
-using a (abandon_type x persona) matrix. Each persona has a characteristic
-pattern of WHY they abandon:
+  DETECTION RULES:
+  - page_leave from /cart + items -> CART_ABANDON
+  - page_leave from /checkout + no completion -> CHECKOUT_ABANDON
+  - page_leave from /product + >10s dwell + no add_to_cart -> PRODUCT_PAGE_ABANDON
+  - exit_intent + cart items -> CART/CHECKOUT_ABANDON
+  - search + results + no click -> SEARCH_ABANDON
 
-  +-------------------------+-------------+-------------+-------------+-------------+
-  | PERSONA                 | Cart        | Checkout    | Product Pg  | Search      |
-  |                         | Abandon     | Abandon     | Abandon     | Abandon     |
-  +-------------------------+-------------+-------------+-------------+-------------+
-  | Tech Enthusiast         | Confidence  | Payment     | Confidence  | Cant Find   |
-  | Value Hunter            | Price       | Payment     | Price       | Cant Find   |
-  | Considered Researcher   | Confidence  | Payment     | Confidence  | Cant Find   |
-  | Loyalty Power User      | Distraction | Payment     | Distraction | Cant Find   |
-  | Lapsing Customer        | Distraction | Price       | Distraction | Cant Find   |
-  | Business Buyer          | Price       | Payment     | Confidence  | Cant Find   |
-  | Impulse Buyer           | Distraction | Payment     | Distraction | Cant Find   |
-  | Home Upgrader           | Price       | Payment     | Confidence  | Cant Find   |
-  | Gift Shopper            | Confidence  | Payment     | Confidence  | Cant Find   |
-  | Student Budget          | Price       | Payment     | Price       | Cant Find   |
-  +-------------------------+-------------+-------------+-------------+-------------+
-
-  CONTEXTUAL OVERRIDES (applied before the matrix lookup):
-  - If price_sensitivity > 0.7 AND cart_total > 1.5x avg_order_value
-    -> Override to PRICE_TOO_HIGH (regardless of persona)
-  - If research_depth > 0.7 AND time_on_page > 20 seconds on product page
-    -> Override to CONFIDENCE_GAP
-  - If deal_seeking_score > 0.7 AND cart abandon
-    -> Override to PRICE_TOO_HIGH
-
-  Each (reason, persona) combination maps to a specific intervention template
-  with persona-appropriate messaging, totaling 50 unique intervention
-  configurations (5 reasons x 10 personas).
+  CLASSIFICATION: 10x4 matrix (persona x abandon_type) -> reason
+  with 3 contextual overrides (price sensitivity, research depth, deal seeking)
 
 
-7. INTERVENTION TEMPLATES BY PERSONA
+7. INTERVENTION ENGINE (50 UNIQUE TEMPLATES)
 ================================================================================
 
-  PERSONA             | PRICE_TOO_HIGH     | PAYMENT_FRICTION   | CONFIDENCE_GAP
-  --------------------|--------------------|--------------------|------------------
-  Tech Enthusiast     | Member pricing 5%  | Instant CC approval| Popular among tech
-  Value Hunter        | Price drop 10%     | BNPL 4 payments    | #1 best seller
-  Considered Research | TCO comparison     | Financing explainer| Expert comparison
-  Loyalty Power User  | VIP price 8%       | Express checkout   | Satisfaction guar.
-  Lapsing Customer    | Winback 15%        | Easy payment opts  | Reviews email
-  Business Buyer      | Bulk pricing 20%   | Net 30 terms       | Free consultation
-  Impulse Buyer       | Flash sale 12%     | One-tap checkout   | Trending now
-  Home Upgrader       | Bundle savings 15% | 0% home financing  | Home expert review
-  Gift Shopper        | Gift value pick 10%| Gift card payment  | #1 gift rated
-  Student Budget      | Student discount15%| Student BNPL       | Student reviews
-
-  PERSONA             | COULDNT_FIND_IT    | DISTRACTION
-  --------------------|--------------------|--------------------
-  Tech Enthusiast     | Restock alert      | Cart reminder push
-  Value Hunter        | Similar alternatives| Cart reminder push
-  Considered Research | Curated specs list | Saved research email
-  Loyalty Power User  | Personal shopper   | Gentle reminder push
-  Lapsing Customer    | New arrivals email | We miss you 20% off
-  Business Buyer      | Dedicated rep      | Order reminder push
-  Impulse Buyer       | Trending alts      | Going fast! push
-  Home Upgrader       | Home solutions     | Home project email
-  Gift Shopper        | Gift finder tool   | Gift reminder push
-  Student Budget      | Student essentials | Student cart push
+  5 reasons x 10 personas = 50 unique interventions
+  Types: overlay (15% recovery), push_notification (8%), email_template (6%)
+  Each includes: headline, body, CTA, urgency, display_duration
 
 
-8. API REFERENCE
+8. STOREFRONT PERSONALIZATION (SPARSE & MINIMAL)
 ================================================================================
 
-  POST /api/customer
-    Register a new customer and assign a persona.
-    Body: { first_name, last_name, email, age, tech_affinity, price_sensitivity,
-            deal_seeking_score, research_depth, brand_loyalty_score,
-            avg_order_value, lifetime_spend, total_site_visits_90d,
-            avg_session_duration_min, cart_abandonment_rate, propensity_to_churn,
-            days_since_last_visit, lifetime_order_count, return_rate }
-    Response: { customer_id, persona_type, persona_confidence }
-
-  POST /api/customer/predict-persona
-    Predict persona without persisting (lightweight).
-    Body: { tech_affinity, price_sensitivity, deal_seeking_score, research_depth,
-            brand_loyalty_score, avg_order_value, lifetime_spend,
-            total_site_visits_90d, avg_session_duration_min,
-            cart_abandonment_rate, propensity_to_churn, days_since_last_visit,
-            lifetime_order_count, return_rate }
-    Response: { persona_type, persona_confidence }
-
-  POST /api/session
-    Create a session (picks random existing customer).
-    Query: ?force_persona=impulse_buyer (optional)
-    Response: { session_id, customer_id, persona_type, persona_confidence, first_name }
-
-  GET /api/personas
-    List all 10 personas with counts and distribution.
-
-  GET /api/stats
-    Dashboard stats including unique_customers count.
+  PLP: ~30% badge coverage, ~40% price hints, 2-4 variants per persona
+  PDP: Social proof badge, dynamic price, persona-specific CTA
+  Session nudges: Toast-style, shown once per session
+  Intervention overlays: WebSocket-triggered, auto-dismiss
 
 
-9. THE BIG PICTURE (NON-TECHNICAL SUMMARY)
+9. REAL-TIME DASHBOARD
 ================================================================================
 
-Imagine you walk into a Best Buy store. A really smart sales associate notices:
+  8 KPIs, 10-persona selector, per-persona detail view with charts,
+  aggregate charts, live event feed, intervention log.
+  Data: WebSocket primary + REST polling fallback.
 
-"This person always waits for sales" -> They show you a coupon
-"This person loves the latest gadgets" -> They show you what just launched
-"This person reads every review before buying" -> They hand you a comparison guide
 
-This app does exactly that -- but online, automatically, and in real-time.
+10. DEMO SIMULATOR
+================================================================================
 
-The system:
-  1. Generates 10,000 realistic customer profiles (synthetic data)
-  2. Uses ML to group them into 10 persona archetypes (K-Means clustering)
-  3. Tracks every action on the storefront in real-time (WebSocket events)
-  4. Detects when someone is about to leave (abandon detection)
-  5. Figures out WHY they're leaving (reason classification by persona)
-  6. Shows them the right message at the right moment (personalized intervention)
-  7. Re-evaluates their persona as behavior changes (dynamic reassignment)
+  200 sessions at startup across 10 personas with weighted distribution.
+  Uses real classifier + intervention engine for realistic metrics.
+  Output: ~95 abandons, ~$143K at risk, ~$19.7K recovered.
 
-Same product, same abandon action, but completely different interventions
-based on who the customer is. That's the core value proposition.
+
+11. API REFERENCE
+================================================================================
+
+  GET  /api/health                    Health check
+  GET  /api/products                  Product list
+  GET  /api/products/{id}             Single product
+  POST /api/session                   Create session
+  GET  /api/session/{id}              Get session
+  POST /api/customer                  Register + assign persona
+  POST /api/customer/predict-persona  Lightweight predict
+  GET  /api/personas                  All personas with counts
+  GET  /api/personas/{type}           Single persona metadata
+  GET  /api/personas/all/stats        Detailed stats for all 10
+  GET  /api/personas/{type}/stats     Detailed stats for one
+  GET  /api/stats                     Dashboard snapshot
+  WS   /ws/storefront/{session_id}    Event stream + interventions
+  WS   /ws/dashboard                  Real-time dashboard updates
 
 
 ================================================================================
